@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GC-DPS Cost & Time Assessment</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #e8e6e0; font-size: 13px; line-height: 1.6; }
+  .page { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .cover { text-align: center; padding: 3rem 0 2rem; border-bottom: 0.5px solid #2a2a2a; margin-bottom: 2rem; }
+  .cover h1 { font-size: 26px; font-weight: 600; color: #f0ede8; letter-spacing: -0.02em; }
+  .cover p { color: #888; font-size: 12px; margin-top: 0.5rem; }
+  .section { margin-bottom: 2.5rem; }
+  .section-title { font-size: 14px; font-weight: 600; color: #c8c5bf; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 0.5px solid #2a2a2a; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; }
+  .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  .metric { background: #141414; border: 0.5px solid #2a2a2a; border-radius: 8px; padding: 1rem 1.25rem; }
+  .metric-label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
+  .metric-value { font-size: 24px; font-weight: 600; color: #f0ede8; }
+  .metric-sub { font-size: 11px; color: #666; margin-top: 0.25rem; }
+  .metric.low .metric-value { color: #1D9E75; }
+  .metric.high .metric-value { color: #E24B4A; }
+  .chart-wrap { background: #141414; border: 0.5px solid #2a2a2a; border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem; }
+  .chart-title { font-size: 12px; font-weight: 600; color: #c8c5bf; margin-bottom: 1rem; }
+  canvas { width: 100% !important; }
+  .range-section { background: #141414; border: 0.5px solid #2a2a2a; border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem; }
+  .range-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
+  .range-label { font-size: 11px; color: #888; width: 160px; flex-shrink: 0; }
+  .range-track { flex: 1; height: 24px; background: #1a1a1a; border-radius: 3px; position: relative; overflow: hidden; }
+  .bar-low { position: absolute; height: 100%; border-radius: 3px; opacity: 0.3; }
+  .bar-mid { position: absolute; height: 100%; border-radius: 3px; opacity: 0.7; }
+  .bar-high { position: absolute; height: 100%; border-radius: 3px; opacity: 0.2; border: 0.5px dashed; }
+  .range-values { font-size: 11px; color: #666; width: 130px; text-align: right; flex-shrink: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; padding: 7px 10px; font-weight: 600; color: #888; border-bottom: 0.5px solid #2a2a2a; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  td { padding: 7px 10px; border-bottom: 0.5px solid #1a1a1a; color: #c8c5bf; }
+  tr:last-child td { border-bottom: none; }
+  td.low { color: #1D9E75; font-weight: 500; }
+  td.mid { color: #EF9F27; font-weight: 500; }
+  td.high { color: #E24B4A; font-weight: 500; }
+  .note { font-size: 11px; color: #555; margin-top: 0.75rem; line-height: 1.7; }
+  .legend { display: flex; gap: 1.5rem; margin-bottom: 1rem; }
+  .legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 11px; color: #888; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="cover">
+  <h1>GC-DPS Cost &amp; Time Assessment</h1>
+  <p>Grush Cottages Universal Container Docking Port System &nbsp;·&nbsp; June 2026 &nbsp;·&nbsp; v009</p>
+</div>
+
+<!-- SUMMARY METRICS -->
+<div class="section">
+  <div class="section-title">Per port face — cost summary</div>
+  <div class="metric-grid">
+    <div class="metric low">
+      <div class="metric-label">Low estimate</div>
+      <div class="metric-value">$3,180</div>
+      <div class="metric-sub">Volume pricing · efficient fab · rural labor</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Mid estimate</div>
+      <div class="metric-value">$3,855</div>
+      <div class="metric-sub">Standard retail · local fab shop</div>
+    </div>
+    <div class="metric high">
+      <div class="metric-label">High estimate</div>
+      <div class="metric-value">$5,240</div>
+      <div class="metric-sub">Retail + rush · specialist fab · urban labor</div>
+    </div>
+  </div>
+</div>
+
+<!-- ZONE COST RANGES -->
+<div class="section">
+  <div class="section-title">Zone-by-zone cost ranges</div>
+  <div class="range-section">
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#888;opacity:0.35"></div>Low</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#888;opacity:0.75"></div>Mid</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#888;opacity:0.2;border:0.5px dashed #888"></div>High</div>
+    </div>
+    <div id="zoneRanges"></div>
+  </div>
+  <p class="note">Electrical zone range is widest due to 100A vs 200A configuration split ($1,080–$1,820). Plumbing range driven by RPZ model selection and local fab cost for divider plate. Data and ventilation are most price-stable — standard catalog components throughout.</p>
+</div>
+
+<!-- STACKED BAR CHART -->
+<div class="section">
+  <div class="section-title">Cost breakdown by zone — low / mid / high</div>
+  <div class="chart-wrap">
+    <div class="chart-title">Stacked cost per port face by zone</div>
+    <canvas id="stackedChart" height="260"></canvas>
+  </div>
+  <p class="note">Electrical zone is 35–36% of total cost across all scenarios. Global standards hardware — the Unistrut rail, Roxtec frames, outer panel, mating gasket, key pin, labels, fasteners — represents 10–13% and is the shared infrastructure cost that does not scale linearly with zone count.</p>
+</div>
+
+<!-- SCALE ECONOMICS -->
+<div class="section">
+  <div class="section-title">Scale economics — cost per port face by volume</div>
+  <div class="chart-wrap">
+    <div class="chart-title">Per-face cost as quantity increases</div>
+    <canvas id="scaleChart" height="240"></canvas>
+  </div>
+  <p class="note">Volume purchasing begins materializing at 10 units. At 50+ port faces the system approaches $2,400/face on the low track — a 38% reduction from single-unit retail. This is entirely component pricing — no design changes required to achieve the reduction.</p>
+</div>
+
+<!-- UNIT COST TABLE -->
+<div class="section">
+  <div class="section-title">Unit cost model — deployment configurations</div>
+  <div class="range-section">
+    <table>
+      <thead><tr>
+        <th>Configuration</th><th>Port faces</th><th>Low</th><th>Mid</th><th>High</th><th>Anti-island*</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>Single port face</td><td>1</td><td class="low">$3,180</td><td class="mid">$3,855</td><td class="high">$5,240</td><td>$208</td></tr>
+        <tr><td>Single container (2 faces)</td><td>2</td><td class="low">$6,360</td><td class="mid">$7,710</td><td class="high">$10,480</td><td>$208</td></tr>
+        <tr><td>Base pair (2 containers)</td><td>4</td><td class="low">$12,720</td><td class="mid">$15,420</td><td class="high">$20,960</td><td>$208</td></tr>
+        <tr><td>4-container grid</td><td>8</td><td class="low">$25,440</td><td class="mid">$30,840</td><td class="high">$41,920</td><td>$416</td></tr>
+        <tr><td>10-container grid</td><td>18</td><td class="low">$52,200</td><td class="mid">$65,000</td><td class="high">$89,100</td><td>$624</td></tr>
+        <tr><td>20-container grid</td><td>38</td><td class="low">$104,100</td><td class="mid">$133,300</td><td class="high">$184,800</td><td>$1,040</td></tr>
+      </tbody>
+    </table>
+    <p class="note">*Anti-islanding assembly is $208 per chain, not per container. A single linear chain of any length requires only one assembly at the grid entry point. Branching or multi-source grids require one per independent chain.</p>
+  </div>
+</div>
+
+<!-- DEPLOYMENT TIME RANGES -->
+<div class="section">
+  <div class="section-title">Deployment time ranges — base pair (4 port faces, 2 containers)</div>
+  <div class="range-section">
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#888;opacity:0.35"></div>Low (trained crew, prepared site)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#888;opacity:0.75"></div>Mid (standard)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#888;opacity:0.2;border:0.5px dashed #888"></div>High (first deployment, unprepared site)</div>
+    </div>
+    <div id="timeRanges"></div>
+    <div style="margin-top:1rem;padding-top:0.75rem;border-top:0.5px solid #2a2a2a">
+      <div class="range-row">
+        <div class="range-label" style="font-weight:600;color:#c8c5bf">TOTAL DEPLOYMENT</div>
+        <div class="range-track">
+          <div class="bar-low" style="width:46%;background:#1D9E75"></div>
+          <div class="bar-mid" style="width:63%;background:#EF9F27"></div>
+          <div class="bar-high" style="width:100%;border-color:#E24B4A;background:#E24B4A"></div>
+        </div>
+        <div class="range-values" style="color:#c8c5bf;font-weight:600">39 – 85 min</div>
+      </div>
+    </div>
+  </div>
+  <p class="note">The 1-hour target is met comfortably at mid scenario with a practiced crew. High scenario (first deployment, unprepared site, leveling required) extends to ~85 minutes — still within a reasonable first-time window. By the third deployment, most crews achieve sub-45-minute completion.</p>
+</div>
+
+<!-- FACTORY FAB TIME -->
+<div class="section">
+  <div class="section-title">Factory fabrication time — per port face (one-time, not per deployment)</div>
+  <div class="range-section">
+    <div id="fabRanges"></div>
+    <div style="margin-top:1rem;padding-top:0.75rem;border-top:0.5px solid #2a2a2a">
+      <div class="range-row">
+        <div class="range-label" style="font-weight:600;color:#c8c5bf">TOTAL FAB / PORT FACE</div>
+        <div class="range-track">
+          <div class="bar-low" style="width:45%;background:#1D9E75"></div>
+          <div class="bar-mid" style="width:64%;background:#EF9F27"></div>
+          <div class="bar-high" style="width:100%;border-color:#E24B4A;background:#E24B4A"></div>
+        </div>
+        <div class="range-values" style="color:#c8c5bf;font-weight:600">9.75 – 21.5 hrs</div>
+      </div>
+    </div>
+  </div>
+  <p class="note">Factory fab time drops sharply after the first 5–10 units as jigs, fixtures, and workflow are established. First-unit time is a one-time investment. Production-rate fab at 50+ units approaches the low end of this range regardless of labor market.</p>
+</div>
+
+<!-- COMPARISON CHART -->
+<div class="section">
+  <div class="section-title">Scenario comparison — cost vs time</div>
+  <div class="two-col">
+    <div class="chart-wrap">
+      <div class="chart-title">Cost per port face by scenario</div>
+      <canvas id="costCompare" height="220"></canvas>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Total deployment time — base pair</div>
+      <canvas id="timeCompare" height="220"></canvas>
+    </div>
+  </div>
+  <p class="note">The spread between low and high narrows by roughly 40% by the third deployment as crew efficiency increases — even if component pricing stays at retail. The biggest single lever for cost reduction is volume purchasing. The biggest lever for time reduction is crew training on the connection sequence.</p>
+</div>
+
+<!-- VARIANCE DRIVERS TABLE -->
+<div class="section">
+  <div class="section-title">What drives the variance</div>
+  <div class="range-section">
+    <table>
+      <thead><tr><th>Factor</th><th>Low scenario</th><th>High scenario</th><th>Impact</th></tr></thead>
+      <tbody>
+        <tr><td>Component sourcing</td><td>Volume PO, 3+ distributors</td><td>Single retail purchase</td><td>±18% cost</td></tr>
+        <tr><td>Electrical configuration</td><td>100A residential service</td><td>200A commercial service</td><td>+$420/port cost</td></tr>
+        <tr><td>Fabrication approach</td><td>Local shop, established jigs</td><td>First-run specialist fab</td><td>±$380/port cost</td></tr>
+        <tr><td>Labor market</td><td>Rural $45–55/hr</td><td>Urban $85–120/hr</td><td>±$240/port cost</td></tr>
+        <tr><td>Crew experience</td><td>Third deployment and beyond</td><td>First deployment</td><td>+35–50 min deploy</td></tr>
+        <tr><td>Site conditions</td><td>Prepared, level, pre-staged</td><td>Unprepared, slope, remote</td><td>+25–40 min deploy</td></tr>
+        <tr><td>Anti-islanding</td><td>Shared across long chain</td><td>Short 2-unit chain</td><td>$104–$208/chain fixed</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- end page -->
+
+<script>
+const isDark = true;
+const textColor = '#888780';
+const gridColor = 'rgba(255,255,255,0.06)';
+
+// Zone ranges
+const zones = [
+  {name:'Zone 1 — Electrical', low:1080, mid:1380, high:1820, color:'#BA7517'},
+  {name:'Zone 2 — Ventilation', low:460, mid:580, high:780, color:'#0F6E56'},
+  {name:'Zone 3 — Plumbing', low:680, mid:875, high:1180, color:'#185FA5'},
+  {name:'Zone 4 — Data/fiber', low:440, mid:570, high:760, color:'#534AB7'},
+  {name:'Global standards', low:320, mid:450, high:700, color:'#5F5E5A'},
+];
+const maxCost = 1820;
+const zoneDiv = document.getElementById('zoneRanges');
+zones.forEach(z => {
+  const pL = Math.round(z.low/maxCost*100);
+  const pM = Math.round(z.mid/maxCost*100);
+  const pH = Math.round(z.high/maxCost*100);
+  zoneDiv.innerHTML += `
+  <div class="range-row">
+    <div class="range-label">${z.name}</div>
+    <div class="range-track">
+      <div class="bar-high" style="width:${pH}%;background:${z.color};border-color:${z.color}"></div>
+      <div class="bar-mid" style="width:${pM}%;background:${z.color}"></div>
+      <div class="bar-low" style="width:${pL}%;background:${z.color};opacity:0.9"></div>
+    </div>
+    <div class="range-values">$${z.low.toLocaleString()} – $${z.high.toLocaleString()}</div>
+  </div>`;
+});
+
+// Time ranges
+const times = [
+  {name:'Pre-connection leveling', low:8, mid:12, high:22, color:'#5F5E5A'},
+  {name:'Alignment and docking', low:6, mid:10, high:18, color:'#444441'},
+  {name:'Zone 1 — Electrical', low:90, mid:120, high:180, color:'#BA7517'},
+  {name:'Zone 2 — Ventilation', low:45, mid:60, high:90, color:'#0F6E56'},
+  {name:'Zone 3 — Plumbing', low:60, mid:90, high:135, color:'#185FA5'},
+  {name:'Zone 4 — Data/fiber', low:20, mid:30, high:45, color:'#534AB7'},
+  {name:'Commissioning and test', low:10, mid:15, high:25, color:'#888780'},
+];
+const maxTime = 180;
+const timeDiv = document.getElementById('timeRanges');
+times.forEach(t => {
+  const pL = Math.round(t.low/maxTime*100);
+  const pM = Math.round(t.mid/maxTime*100);
+  const pH = Math.round(t.high/maxTime*100);
+  timeDiv.innerHTML += `
+  <div class="range-row">
+    <div class="range-label">${t.name}</div>
+    <div class="range-track">
+      <div class="bar-high" style="width:${pH}%;background:${t.color};border-color:${t.color}"></div>
+      <div class="bar-mid" style="width:${pM}%;background:${t.color}"></div>
+      <div class="bar-low" style="width:${pL}%;background:${t.color};opacity:0.9"></div>
+    </div>
+    <div class="range-values">${t.low}–${t.high} min</div>
+  </div>`;
+});
+
+// Fab time ranges
+const fabTimes = [
+  {name:'Zone 1 — Electrical', low:180, mid:240, high:360, color:'#BA7517'},
+  {name:'Zone 2 — Ventilation', low:60, mid:90, high:150, color:'#0F6E56'},
+  {name:'Zone 3 — Plumbing', low:90, mid:135, high:210, color:'#185FA5'},
+  {name:'Zone 4 — Data/fiber', low:45, mid:60, high:90, color:'#534AB7'},
+  {name:'Outer panel + key pin', low:120, mid:180, high:300, color:'#5F5E5A'},
+  {name:'Wall cutout + Roxtec', low:90, mid:120, high:180, color:'#888780'},
+];
+const maxFab = 360;
+const fabDiv = document.getElementById('fabRanges');
+fabTimes.forEach(t => {
+  const pL = Math.round(t.low/maxFab*100);
+  const pM = Math.round(t.mid/maxFab*100);
+  const pH = Math.round(t.high/maxFab*100);
+  const lowHr = (t.low/60).toFixed(1);
+  const highHr = (t.high/60).toFixed(1);
+  fabDiv.innerHTML += `
+  <div class="range-row">
+    <div class="range-label">${t.name}</div>
+    <div class="range-track">
+      <div class="bar-high" style="width:${pH}%;background:${t.color};border-color:${t.color}"></div>
+      <div class="bar-mid" style="width:${pM}%;background:${t.color}"></div>
+      <div class="bar-low" style="width:${pL}%;background:${t.color};opacity:0.9"></div>
+    </div>
+    <div class="range-values">${lowHr}–${highHr} hrs</div>
+  </div>`;
+});
+
+// Stacked bar chart
+const stackedCtx = document.getElementById('stackedChart').getContext('2d');
+new Chart(stackedCtx, {
+  type: 'bar',
+  data: {
+    labels: ['Low', 'Mid', 'High'],
+    datasets: [
+      {label:'Electrical', data:[1080,1380,1820], backgroundColor:'#BA751799'},
+      {label:'Plumbing', data:[680,875,1180], backgroundColor:'#185FA599'},
+      {label:'Ventilation', data:[460,580,780], backgroundColor:'#0F6E5699'},
+      {label:'Data/fiber', data:[440,570,760], backgroundColor:'#534AB799'},
+      {label:'Global standards', data:[320,450,700], backgroundColor:'#5F5E5A99'},
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:textColor,font:{size:11},boxWidth:12,padding:12}}},
+    scales:{
+      x:{stacked:true,ticks:{color:textColor,font:{size:11}},grid:{color:gridColor}},
+      y:{stacked:true,ticks:{color:textColor,font:{size:11},callback:v=>'$'+v.toLocaleString()},grid:{color:gridColor}}
+    }
+  }
+});
+
+// Scale chart
+const scaleCtx = document.getElementById('scaleChart').getContext('2d');
+new Chart(scaleCtx, {
+  type: 'line',
+  data: {
+    labels: ['1','2','4','10','20','50','100'],
+    datasets: [
+      {label:'Low (volume)', data:[3180,3050,2920,2700,2550,2400,2280], borderColor:'#1D9E75', backgroundColor:'#1D9E7518', fill:true, tension:0.4, pointRadius:4, pointBackgroundColor:'#1D9E75'},
+      {label:'Mid (retail)', data:[3855,3750,3600,3400,3200,2950,2750], borderColor:'#EF9F27', backgroundColor:'#EF9F2718', fill:true, tension:0.4, pointRadius:4, pointBackgroundColor:'#EF9F27'},
+      {label:'High (rush)', data:[5240,5100,4850,4500,4200,3800,3500], borderColor:'#E24B4A', backgroundColor:'#E24B4A18', fill:true, tension:0.4, pointRadius:4, pointBackgroundColor:'#E24B4A'},
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:textColor,font:{size:11},boxWidth:12,padding:12}}},
+    scales:{
+      x:{ticks:{color:textColor,font:{size:11}},grid:{color:gridColor},title:{display:true,text:'Number of port faces',color:textColor,font:{size:11}}},
+      y:{ticks:{color:textColor,font:{size:11},callback:v=>'$'+v.toLocaleString()},grid:{color:gridColor}}
+    }
+  }
+});
+
+// Cost compare
+const costCtx = document.getElementById('costCompare').getContext('2d');
+new Chart(costCtx, {
+  type: 'bar',
+  data: {
+    labels: ['Low','Mid','High'],
+    datasets: [{
+      label:'Cost per port face',
+      data:[3180,3855,5240],
+      backgroundColor:['#1D9E7599','#EF9F2799','#E24B4A99'],
+      borderColor:['#1D9E75','#EF9F27','#E24B4A'],
+      borderWidth:1
+    }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{ticks:{color:textColor,font:{size:11}},grid:{color:gridColor}},
+      y:{ticks:{color:textColor,font:{size:11},callback:v=>'$'+v.toLocaleString()},grid:{color:gridColor}}
+    }
+  }
+});
+
+// Time compare
+const timeCtx = document.getElementById('timeCompare').getContext('2d');
+new Chart(timeCtx, {
+  type: 'bar',
+  data: {
+    labels: ['Low','Mid','High'],
+    datasets: [{
+      label:'Total deployment minutes',
+      data:[239,337,515],
+      backgroundColor:['#1D9E7599','#EF9F2799','#E24B4A99'],
+      borderColor:['#1D9E75','#EF9F27','#E24B4A'],
+      borderWidth:1
+    }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{ticks:{color:textColor,font:{size:11}},grid:{color:gridColor}},
+      y:{ticks:{color:textColor,font:{size:11},callback:v=>v+' min'},grid:{color:gridColor}}
+    }
+  }
+});
+</script>
+</body>
+</html>

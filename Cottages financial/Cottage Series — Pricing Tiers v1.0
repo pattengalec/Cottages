@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cottage Series — Pricing Tiers</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Bebas+Neue&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #09080d; --surface: #111018; --surface2: #181622; --border: #2a2540;
+    --accent: #b388ff; --accent2: #7c4dff; --accent3: #ea80fc;
+    --gold: #ffd740; --green: #69ff85; --blue: #40c4ff; --orange: #ff9e40;
+    --text: #e8e4f8; --text2: #8a82aa; --muted: #4a4468;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; line-height: 1.6; min-height: 100vh; }
+  header { position: relative; z-index: 1; padding: 48px 48px 32px; border-bottom: 1px solid var(--border); overflow: hidden; }
+  .brand { font-family: 'Bebas Neue', sans-serif; font-size: 48px; letter-spacing: 4px; color: var(--accent); line-height: 1; text-shadow: 0 0 60px rgba(179,136,255,0.3); }
+  .brand-sub { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: 6px; text-transform: uppercase; color: var(--text2); margin-top: 6px; }
+  .header-desc { max-width: 600px; margin-top: 16px; font-size: 12px; color: var(--text2); line-height: 1.8; }
+  .header-chips { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+  .chip { font-size: 10px; letter-spacing: 2px; padding: 4px 12px; border: 1px solid var(--border); color: var(--text2); text-transform: uppercase; }
+  .chip.hi { border-color: var(--accent); color: var(--accent); }
+  .product-tabs { display: flex; border-bottom: 1px solid var(--border); position: relative; z-index: 1; }
+  .ptab { padding: 14px 28px; font-family: 'Syne', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; border-bottom: 2px solid transparent; color: var(--text2); transition: all 0.2s; user-select: none; }
+  .ptab:hover { color: var(--text); }
+  .ptab.active-myco { color: #69ff85; border-bottom-color: #69ff85; }
+  .ptab.active-grow { color: #40c4ff; border-bottom-color: #40c4ff; }
+  .ptab.active-shop { color: #ff9e40; border-bottom-color: #ff9e40; }
+  .ptab.active-bundle { color: var(--gold); border-bottom-color: var(--gold); }
+  .content { position: relative; z-index: 1; padding: 40px 48px; }
+  .tiers-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 48px; }
+  .tier-card { background: var(--surface); border: 1px solid var(--border); padding: 24px 20px; position: relative; transition: transform 0.2s; }
+  .tier-card:hover { transform: translateY(-2px); }
+  .tier-card.featured { border-color: var(--accent); background: var(--surface2); }
+  .tier-card.featured::before { content: 'MOST POPULAR'; position: absolute; top: -1px; left: 50%; transform: translateX(-50%); background: var(--accent2); color: white; font-size: 8px; letter-spacing: 2px; padding: 3px 10px; white-space: nowrap; }
+  .tier-num { font-family: 'Bebas Neue', sans-serif; font-size: 56px; line-height: 1; opacity: 0.08; position: absolute; top: 12px; right: 16px; }
+  .tier-name { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px; margin-bottom: 4px; }
+  .tier-tagline { font-size: 10px; color: var(--text2); letter-spacing: 1px; margin-bottom: 20px; line-height: 1.5; }
+  .tier-price { margin-bottom: 20px; }
+  .tier-price .amount { font-family: 'Bebas Neue', sans-serif; font-size: 42px; line-height: 1; color: var(--accent); }
+  .tier-price .note { font-size: 10px; color: var(--text2); margin-top: 2px; }
+  .tier-includes { list-style: none; }
+  .tier-includes li { display: flex; gap: 8px; font-size: 11px; color: var(--text2); padding: 5px 0; border-bottom: 1px solid #1e1b2e; line-height: 1.4; }
+  .tier-includes li:last-child { border-bottom: none; }
+  .tier-includes li::before { content: '→'; flex-shrink: 0; }
+  .tier-includes li.yes { color: var(--text); }
+  .tier-includes li.yes::before { content: '✓'; }
+  .tier-includes li.no { opacity: 0.35; text-decoration: line-through; }
+  .tier-includes li.no::before { content: '—'; }
+  .tier-badge { display: inline-block; font-size: 9px; letter-spacing: 1px; padding: 2px 8px; margin-bottom: 12px; text-transform: uppercase; }
+  .product-section { display: none; }
+  .product-section.active { display: block; }
+  .compare-section { margin-bottom: 48px; }
+  .compare-label { font-family: 'Syne', sans-serif; font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
+  .compare-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .compare-table { width: 100%; border-collapse: collapse; }
+  .compare-table th { text-align: left; font-size: 10px; letter-spacing: 2px; color: var(--muted); padding: 8px 12px; border-bottom: 1px solid var(--border); font-weight: 400; text-transform: uppercase; }
+  .compare-table th:not(:first-child) { text-align: center; }
+  .compare-table td { padding: 10px 12px; font-size: 11px; border-bottom: 1px solid #111020; vertical-align: middle; }
+  .compare-table td:not(:first-child) { text-align: center; }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table td:first-child { color: var(--text2); }
+  .check { color: var(--green); font-size: 14px; }
+  .cross { color: var(--muted); font-size: 12px; }
+  .partial { color: var(--gold); font-size: 11px; }
+  .notes-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 48px; }
+  .note-card { background: var(--surface); border: 1px solid var(--border); padding: 20px; }
+  .note-card .nt { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; color: var(--accent); margin-bottom: 10px; letter-spacing: 1px; }
+  .note-card .nd { font-size: 11px; color: var(--text2); line-height: 1.7; }
+  .note-card .nd strong { color: var(--text); }
+  .grush-addon { background: linear-gradient(135deg, #0f0c1a 0%, #1a1230 100%); border: 1px solid var(--accent2); padding: 28px 32px; margin-bottom: 48px; display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: center; }
+  .grush-addon .gt { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 3px; color: var(--accent); margin-bottom: 4px; }
+  .grush-addon .gd { font-size: 11px; color: var(--text2); max-width: 600px; line-height: 1.7; }
+  .grush-addon .gd strong { color: var(--text); }
+  .grush-tiers { display: flex; flex-direction: column; gap: 8px; min-width: 220px; }
+  .grush-tier-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; background: rgba(124,77,255,0.1); border: 1px solid rgba(124,77,255,0.2); }
+  .grush-tier-row .gtn { font-size: 11px; color: var(--text2); }
+  .grush-tier-row .gtp { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--accent); }
+  footer { position: relative; z-index: 1; padding: 16px 48px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+  @media(max-width:1100px) { .tiers-grid { grid-template-columns: repeat(3,1fr); } }
+  @media(max-width:800px) { .tiers-grid { grid-template-columns: 1fr 1fr; } .notes-grid { grid-template-columns: 1fr; } .grush-addon { grid-template-columns: 1fr; } header, .content, footer { padding: 24px 20px; } .product-tabs { overflow-x: auto; } }
+  @media(max-width:500px) { .tiers-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">COTTAGE SERIES</div>
+  <div class="brand-sub">by Grush — Containerized Production Systems</div>
+  <div class="header-desc">Site-built 40ft High Cube container systems for mycology, plant cultivation, and workshop production. From digital plans to complete turnkey installs.</div>
+  <div class="header-chips">
+    <div class="chip hi">MYCOttage</div><div class="chip hi">GROWcottage</div><div class="chip hi">SHOPcottage</div>
+    <div class="chip">Site Built · Zone 9B</div><div class="chip">Grush Integrated</div><div class="chip">40FT High Cube</div>
+  </div>
+</header>
+<div class="product-tabs">
+  <div class="ptab active-myco" onclick="showProduct('myco',this)">🍄 MYCOttage</div>
+  <div class="ptab" onclick="showProduct('grow',this)">🌿 GROWcottage</div>
+  <div class="ptab" onclick="showProduct('shop',this)">🔧 SHOPcottage</div>
+  <div class="ptab" onclick="showProduct('bundle',this)">⬡ Bundles</div>
+</div>
+<div class="content">
+
+<!-- MYCOTTAGE -->
+<div class="product-section myco active" id="section-myco">
+  <div class="tiers-grid">
+    <div class="tier-card">
+      <div class="tier-num">1</div>
+      <div class="tier-badge" style="background:rgba(105,255,133,0.1);color:#69ff85;border:1px solid rgba(105,255,133,0.2)">DIGITAL</div>
+      <div class="tier-name">Build Plans Only</div>
+      <div class="tier-tagline">Full spec docs for skilled self-builders</div>
+      <div class="tier-price"><div class="amount" style="color:#69ff85">$349</div><div class="note">One-time · Digital delivery</div></div>
+      <ul class="tier-includes">
+        <li class="yes">Dimensioned floor plan PDF</li><li class="yes">Zone-by-zone spec sheet</li><li class="yes">Parts list + model numbers</li>
+        <li class="yes">Electrical single-line diagram</li><li class="yes">Environmental target sheet</li><li class="yes">Build phase checklist</li>
+        <li class="no">Grush software setup</li><li class="no">Container sourcing support</li><li class="no">Any on-site labor</li>
+      </ul>
+    </div>
+    <div class="tier-card">
+      <div class="tier-num">2</div>
+      <div class="tier-badge" style="background:rgba(105,255,133,0.1);color:#69ff85;border:1px solid rgba(105,255,133,0.2)">STARTER</div>
+      <div class="tier-name">Plans + Grush Setup</div>
+      <div class="tier-tagline">Plans plus full Grush onboarding and batch tracking config</div>
+      <div class="tier-price"><div class="amount" style="color:#69ff85">$699</div><div class="note">One-time · Digital + remote setup</div></div>
+      <ul class="tier-includes">
+        <li class="yes">Everything in Plans Only</li><li class="yes">Grush account setup</li><li class="yes">Batch workflow configuration</li>
+        <li class="yes">QR label template setup</li><li class="yes">Shelf location mapping</li><li class="yes">60-day remote support</li>
+        <li class="no">Container sourcing</li><li class="no">Any on-site labor</li>
+      </ul>
+    </div>
+    <div class="tier-card featured">
+      <div class="tier-num">3</div>
+      <div class="tier-badge" style="background:rgba(105,255,133,0.15);color:#69ff85;border:1px solid rgba(105,255,133,0.3)">POPULAR</div>
+      <div class="tier-name">Supervised Build</div>
+      <div class="tier-tagline">You build it — we consult, spec, and verify at milestones</div>
+      <div class="tier-price"><div class="amount" style="color:#69ff85">$2,400</div><div class="note">+ client supplies parts &amp; trades</div></div>
+      <ul class="tier-includes">
+        <li class="yes">Everything in Plans + Grush</li><li class="yes">Pre-build video consult (2hr)</li><li class="yes">Milestone check-ins ×4</li>
+        <li class="yes">Trade sub coordination support</li><li class="yes">Equipment procurement list</li><li class="yes">Grush full onboarding</li>
+        <li class="yes">90-day support</li><li class="no">On-site labor</li><li class="no">Parts / equipment cost</li>
+      </ul>
+    </div>
+    <div class="tier-card">
+      <div class="tier-num">4</div>
+      <div class="tier-badge" style="background:rgba(105,255,133,0.1);color:#69ff85;border:1px solid rgba(105,255,133,0.2)">FULL BUILD</div>
+      <div class="tier-name">Turnkey — No Container</div>
+      <div class="tier-tagline">We build everything inside the client's existing container</div>
+      <div class="tier-price"><div class="amount" style="color:#69ff85">$24,500</div><div class="note">Parts + labor · Client supplies container</div></div>
+      <ul class="tier-includes">
+        <li class="yes">All materials + equipment</li><li class="yes">All interior buildout labor</li><li class="yes">Electrical (self-performed)</li>
+        <li class="yes">HVAC + plumbing subs</li><li class="yes">All shelving + furnishings</li><li class="yes">Grush full install + config</li>
+        <li class="yes">Sensor + automation setup</li><li class="yes">Staff training (half day)</li><li class="yes">1-year warranty on buildout</li>
+        <li class="no">Container cost</li>
+      </ul>
+    </div>
+    <div class="tier-card">
+      <div class="tier-num">5</div>
+      <div class="tier-badge" style="background:rgba(105,255,133,0.1);color:#69ff85;border:1px solid rgba(105,255,133,0.2)">TURNKEY</div>
+      <div class="tier-name">Turnkey — With Container</div>
+      <div class="tier-tagline">Complete delivery — container sourced, built, installed at site</div>
+      <div class="tier-price"><div class="amount" style="color:#69ff85">$31,000</div><div class="note">All-in · Avg. based on container market</div></div>
+      <ul class="tier-includes">
+        <li class="yes">Everything in Turnkey T4</li><li class="yes">40HC container sourced</li><li class="yes">Container delivery to site</li>
+        <li class="yes">Site placement coordination</li><li class="yes">Full project management</li><li class="yes">Grush full install + config</li>
+        <li class="yes">Staff training (full day)</li><li class="yes">1-year full warranty</li><li class="yes">Priority Grush support (1yr)</li>
+      </ul>
+    </div>
+  </div>
+  <div class="compare-section">
+    <div class="compare-label">What's Included — MYCOttage Tiers</div>
+    <table class="compare-table">
+      <thead><tr><th>Feature</th><th>T1 Plans</th><th>T2 +Grush</th><th>T3 Supervised</th><th>T4 No Container</th><th>T5 Turnkey</th></tr></thead>
+      <tbody>
+        <tr><td>Floor plan + spec docs</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+        <tr><td>Parts list + model numbers</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+        <tr><td>Electrical diagram</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+        <tr><td>Grush account + batch config</td><td><span class="cross">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+        <tr><td>Remote consult / milestones</td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+        <tr><td>All materials + equipment supplied</td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+        <tr><td>All buildout labor performed</td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+        <tr><td>Container included</td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="check">✓</span></td></tr>
+        <tr><td>Staff training</td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="partial">½ day</span></td><td><span class="partial">Full day</span></td></tr>
+        <tr><td>Warranty</td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="partial">1yr buildout</span></td><td><span class="partial">1yr full</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- GROWCOTTAGE -->
+<div class="product-section grow" id="section-grow">
+  <div class="tiers-grid">
+    <div class="tier-card"><div class="tier-num">1</div><div class="tier-badge" style="background:rgba(64,196,255,0.1);color:#40c4ff;border:1px solid rgba(64,196,255,0.2)">DIGITAL</div><div class="tier-name">Build Plans Only</div><div class="tier-tagline">Complete plant grow spec for skilled self-builders</div><div class="tier-price"><div class="amount" style="color:#40c4ff">$349</div><div class="note">One-time · Digital delivery</div></div><ul class="tier-includes"><li class="yes">Dimensioned floor plan PDF</li><li class="yes">Zone-by-zone grow spec</li><li class="yes">LED spec + light schedule</li><li class="yes">Irrigation parts list</li><li class="yes">Environmental targets</li><li class="yes">Build phase checklist</li><li class="no">Grush batch setup</li><li class="no">Any on-site labor</li></ul></div>
+    <div class="tier-card"><div class="tier-num">2</div><div class="tier-badge" style="background:rgba(64,196,255,0.1);color:#40c4ff;border:1px solid rgba(64,196,255,0.2)">STARTER</div><div class="tier-name">Plans + Grush Setup</div><div class="tier-tagline">Plans plus Grush plant tracking and harvest logging</div><div class="tier-price"><div class="amount" style="color:#40c4ff">$699</div><div class="note">One-time · Digital + remote setup</div></div><ul class="tier-includes"><li class="yes">Everything in Plans Only</li><li class="yes">Grush account + plant batch setup</li><li class="yes">Grow stage workflow config</li><li class="yes">Harvest weight tracking setup</li><li class="yes">60-day remote support</li><li class="no">On-site labor</li></ul></div>
+    <div class="tier-card featured"><div class="tier-num">3</div><div class="tier-badge" style="background:rgba(64,196,255,0.15);color:#40c4ff;border:1px solid rgba(64,196,255,0.3)">POPULAR</div><div class="tier-name">Supervised Build</div><div class="tier-tagline">Client builds — we consult and verify at milestones</div><div class="tier-price"><div class="amount" style="color:#40c4ff">$2,400</div><div class="note">+ client supplies parts &amp; trades</div></div><ul class="tier-includes"><li class="yes">Everything in Plans + Grush</li><li class="yes">Pre-build consult (2hr)</li><li class="yes">Milestone check-ins ×4</li><li class="yes">LED layout optimization</li><li class="yes">Irrigation system design</li><li class="yes">90-day support</li><li class="no">On-site labor</li></ul></div>
+    <div class="tier-card"><div class="tier-num">4</div><div class="tier-badge" style="background:rgba(64,196,255,0.1);color:#40c4ff;border:1px solid rgba(64,196,255,0.2)">FULL BUILD</div><div class="tier-name">Turnkey — No Container</div><div class="tier-tagline">Full build inside client's container</div><div class="tier-price"><div class="amount" style="color:#40c4ff">$26,000</div><div class="note">Parts + labor · Client supplies container</div></div><ul class="tier-includes"><li class="yes">All materials + LED systems</li><li class="yes">All interior buildout labor</li><li class="yes">Irrigation install</li><li class="yes">HVAC + plumbing subs</li><li class="yes">CO₂ system install</li><li class="yes">Grush full plant tracking</li><li class="yes">Staff training (half day)</li><li class="yes">1-year warranty</li><li class="no">Container cost</li></ul></div>
+    <div class="tier-card"><div class="tier-num">5</div><div class="tier-badge" style="background:rgba(64,196,255,0.1);color:#40c4ff;border:1px solid rgba(64,196,255,0.2)">TURNKEY</div><div class="tier-name">Turnkey — With Container</div><div class="tier-tagline">Complete delivery — container to canopy</div><div class="tier-price"><div class="amount" style="color:#40c4ff">$32,500</div><div class="note">All-in · Avg. based on container market</div></div><ul class="tier-includes"><li class="yes">Everything in Turnkey T4</li><li class="yes">40HC container sourced + delivered</li><li class="yes">Site placement coordination</li><li class="yes">Full project management</li><li class="yes">Grush genetics tracking</li><li class="yes">Staff training (full day)</li><li class="yes">1-year full warranty</li><li class="yes">Priority Grush support (1yr)</li></ul></div>
+  </div>
+</div>
+
+<!-- SHOPCOTTAGE -->
+<div class="product-section shop" id="section-shop">
+  <div class="tiers-grid">
+    <div class="tier-card"><div class="tier-num">1</div><div class="tier-badge" style="background:rgba(255,158,64,0.1);color:#ff9e40;border:1px solid rgba(255,158,64,0.2)">DIGITAL</div><div class="tier-name">Build Plans Only</div><div class="tier-tagline">Full shop layout spec for skilled self-builders</div><div class="tier-price"><div class="amount" style="color:#ff9e40">$249</div><div class="note">One-time · Digital delivery</div></div><ul class="tier-includes"><li class="yes">Dimensioned floor plan PDF</li><li class="yes">Station-by-station spec</li><li class="yes">Dust collection layout</li><li class="yes">Electrical + air line diagram</li><li class="yes">Tool + materials list</li><li class="yes">Build phase checklist</li><li class="no">Any on-site labor</li></ul></div>
+    <div class="tier-card"><div class="tier-num">2</div><div class="tier-badge" style="background:rgba(255,158,64,0.1);color:#ff9e40;border:1px solid rgba(255,158,64,0.2)">STARTER</div><div class="tier-name">Plans + Procurement List</div><div class="tier-tagline">Plans plus curated sourcing list for every station</div><div class="tier-price"><div class="amount" style="color:#ff9e40">$449</div><div class="note">One-time · Digital</div></div><ul class="tier-includes"><li class="yes">Everything in Plans Only</li><li class="yes">Curated tool sourcing list</li><li class="yes">Budget vs mid vs pro options</li><li class="yes">Safety equipment list</li><li class="yes">30-day email support</li><li class="no">On-site labor</li></ul></div>
+    <div class="tier-card featured"><div class="tier-num">3</div><div class="tier-badge" style="background:rgba(255,158,64,0.15);color:#ff9e40;border:1px solid rgba(255,158,64,0.3)">POPULAR</div><div class="tier-name">Supervised Build</div><div class="tier-tagline">Client builds — we spec and verify at milestones</div><div class="tier-price"><div class="amount" style="color:#ff9e40">$1,800</div><div class="note">+ client supplies parts &amp; trades</div></div><ul class="tier-includes"><li class="yes">Everything in Plans + Sourcing</li><li class="yes">Pre-build consult (2hr)</li><li class="yes">Milestone check-ins ×3</li><li class="yes">Dust collection system design</li><li class="yes">Air line routing plan</li><li class="yes">Safety compliance review</li><li class="yes">90-day support</li><li class="no">On-site labor</li></ul></div>
+    <div class="tier-card"><div class="tier-num">4</div><div class="tier-badge" style="background:rgba(255,158,64,0.1);color:#ff9e40;border:1px solid rgba(255,158,64,0.2)">FULL BUILD</div><div class="tier-name">Turnkey — No Container</div><div class="tier-tagline">Full shop built inside client's container</div><div class="tier-price"><div class="amount" style="color:#ff9e40">$22,000</div><div class="note">Parts + labor · Client supplies container</div></div><ul class="tier-includes"><li class="yes">All materials + tools (agreed list)</li><li class="yes">All interior buildout labor</li><li class="yes">Electrical (self-performed)</li><li class="yes">Dust collection install</li><li class="yes">Compressed air system</li><li class="yes">All workbenches + storage</li><li class="yes">Safety station setup</li><li class="yes">1-year warranty</li><li class="no">Container cost</li><li class="no">Power tools (client selects)</li></ul></div>
+    <div class="tier-card"><div class="tier-num">5</div><div class="tier-badge" style="background:rgba(255,158,64,0.1);color:#ff9e40;border:1px solid rgba(255,158,64,0.2)">TURNKEY</div><div class="tier-name">Turnkey — With Container</div><div class="tier-tagline">Keys in hand — container sourced, shop built and ready</div><div class="tier-price"><div class="amount" style="color:#ff9e40">$28,500</div><div class="note">All-in · Avg. based on container market</div></div><ul class="tier-includes"><li class="yes">Everything in Turnkey T4</li><li class="yes">40HC container sourced + delivered</li><li class="yes">Site placement coordination</li><li class="yes">Full project management</li><li class="yes">Station orientation walkthrough</li><li class="yes">1-year full warranty</li></ul></div>
+  </div>
+</div>
+
+<!-- BUNDLES -->
+<div class="product-section bundle-section" id="section-bundle">
+  <div class="tiers-grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="tier-card"><div class="tier-badge" style="background:rgba(255,215,64,0.1);color:var(--gold);border:1px solid rgba(255,215,64,0.2)">BUNDLE</div><div class="tier-name">Plans — All 3 Products</div><div class="tier-tagline">Full plan sets for MYCOttage + GROWcottage + SHOPcottage</div><div class="tier-price"><div class="amount" style="color:var(--gold)">$799</div><div class="note">Save $148 vs. buying separately</div></div><ul class="tier-includes"><li class="yes">MYCOttage build plans</li><li class="yes">GROWcottage build plans</li><li class="yes">SHOPcottage build plans</li><li class="yes">All electrical diagrams</li><li class="yes">All parts lists</li><li class="no">Grush setup</li><li class="no">Any labor or consulting</li></ul></div>
+    <div class="tier-card featured"><div class="tier-badge" style="background:rgba(255,215,64,0.15);color:var(--gold);border:1px solid rgba(255,215,64,0.3)">BUNDLE</div><div class="tier-name">Plans + Grush — All 3</div><div class="tier-tagline">All plans plus Grush onboarding for your full operation</div><div class="tier-price"><div class="amount" style="color:var(--gold)">$1,699</div><div class="note">Save $398 vs. buying separately</div></div><ul class="tier-includes"><li class="yes">All 3 product plan sets</li><li class="yes">Grush setup for all 3 systems</li><li class="yes">Unified batch dashboard config</li><li class="yes">Cross-product workflow setup</li><li class="yes">90-day remote support</li><li class="no">Any on-site labor</li></ul></div>
+    <div class="tier-card"><div class="tier-badge" style="background:rgba(255,215,64,0.1);color:var(--gold);border:1px solid rgba(255,215,64,0.2)">ENTERPRISE</div><div class="tier-name">Full Compound Build</div><div class="tier-tagline">All 3 systems built and installed — the full Cottage Series compound</div><div class="tier-price"><div class="amount" style="color:var(--gold)">POA</div><div class="note">Price on application · Custom scope</div></div><ul class="tier-includes"><li class="yes">MYCOttage full turnkey</li><li class="yes">GROWcottage full turnkey</li><li class="yes">SHOPcottage full turnkey</li><li class="yes">All 3 containers sourced</li><li class="yes">Site compound layout plan</li><li class="yes">Shared utility infrastructure</li><li class="yes">Unified Grush ecosystem</li><li class="yes">Full project management</li><li class="yes">Staff training — all systems</li><li class="yes">2-year full warranty</li></ul></div>
+  </div>
+</div>
+
+<!-- GRUSH ADDON -->
+<div class="grush-addon">
+  <div>
+    <div class="gt">⬡ GRUSH — ADD TO ANY TIER</div>
+    <div class="gd">Grush is Cottage Series' integrated batch tracking and workflow management system. Add it to any build tier, or upgrade later. <strong>Plans-only customers</strong> can add Grush setup as a standalone service at any time. <strong>Turnkey customers</strong> get full Grush included.</div>
+  </div>
+  <div class="grush-tiers">
+    <div class="grush-tier-row"><span class="gtn">Grush Standalone Setup</span><span class="gtp">$399</span></div>
+    <div class="grush-tier-row"><span class="gtn">Grush + 60-day Support</span><span class="gtp">$599</span></div>
+    <div class="grush-tier-row"><span class="gtn">Grush Annual License</span><span class="gtp">$299/yr</span></div>
+    <div class="grush-tier-row"><span class="gtn">Multi-system (all 3 products)</span><span class="gtp">$799/yr</span></div>
+  </div>
+</div>
+
+<!-- NOTES -->
+<div class="notes-grid">
+  <div class="note-card"><div class="nt">⚡ YOUR ELECTRICAL ADVANTAGE</div><div class="nd">As a former wireman, you self-perform all electrical on Tier 4–5 builds. This cuts <strong>$3,000–$5,000</strong> off what a typical contractor would charge for sub-panel, branch circuits, controls, and sensor wiring. That's margin directly in your pocket on every turnkey build.</div></div>
+  <div class="note-card"><div class="nt">📦 CONTAINER PRICING NOTE</div><div class="nd">40HC container market prices fluctuate. Current range: <strong>$3,500–$6,000</strong> sourced direct from shipyard. Tier 5 pricing uses a $5,000 average. If the client supplies their own container, discount accordingly from Tier 5 to Tier 4 pricing.</div></div>
+  <div class="note-card"><div class="nt">💼 LICENSING PLANS TO BUILDERS</div><div class="nd">Contractors who want to offer Cottage Series builds to their own clients can license the plans. <strong>Single-use license:</strong> included in T1. <strong>Contractor license (unlimited builds):</strong> $2,500/yr per product. Contact for details.</div></div>
+</div>
+
+</div>
+<footer>
+  <div>COTTAGE SERIES — PRICING TIERS v1.0 — GRUSH INTEGRATED PRODUCTION SYSTEMS</div>
+  <div>MYCOTTAGE · GROWCOTTAGE · SHOPCOTTAGE</div>
+</footer>
+<script>
+  function showProduct(product, el) {
+    document.querySelectorAll('.product-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.ptab').forEach(t => t.className = 'ptab');
+    document.getElementById('section-' + product).classList.add('active');
+    el.classList.add('active-' + product);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GC-DPS — 3D Visualization</title>
+<style>
+  :root{
+    --paper:#f3efe4;
+    --ink:#1c1c1a;
+    --line:#8a8472;
+    --blue:#2b4c7e;
+    --blue-dim:#5b7ba3;
+    --steel:#6b7280;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:#dcd6c4;font-family:'Courier New',monospace;color:var(--ink);}
+  .sheet{
+    max-width:1280px;margin:18px auto;background:var(--paper);
+    border:2px solid var(--ink);
+    box-shadow:0 4px 18px rgba(0,0,0,0.25);
+    display:flex;flex-direction:column;
+  }
+  .sheet-header{
+    display:flex;justify-content:space-between;align-items:baseline;
+    padding:14px 20px 8px;border-bottom:1px solid var(--line);
+  }
+  .sheet-header h1{
+    font-size:18px;letter-spacing:1px;margin:0;font-weight:700;
+  }
+  .sheet-header .sub{font-size:11px;color:var(--line);letter-spacing:0.5px;}
+  .main{display:flex;flex-wrap:wrap;}
+  .viewport-wrap{flex:1 1 640px;position:relative;border-right:1px solid var(--line);min-width:480px;}
+  #viewport{width:100%;height:560px;display:block;cursor:grab;background:
+      linear-gradient(var(--paper),var(--paper));}
+  #viewport:active{cursor:grabbing;}
+  .hint{
+    position:absolute;bottom:10px;left:14px;font-size:11px;color:var(--line);
+    letter-spacing:0.5px;pointer-events:none;
+  }
+  .scale-note{
+    position:absolute;bottom:10px;right:14px;font-size:11px;color:var(--line);
+    letter-spacing:0.5px;pointer-events:none;text-align:right;
+  }
+  .label{
+    position:absolute;font-size:11px;font-weight:700;color:var(--ink);
+    background:rgba(243,239,228,0.85);padding:1px 4px;border:1px solid var(--ink);
+    border-radius:2px;pointer-events:none;transform:translate(-50%,-50%);
+    white-space:nowrap;
+  }
+  .side{flex:0 0 300px;display:flex;flex-direction:column;}
+  .controls{padding:16px 18px;border-bottom:1px solid var(--line);}
+  .controls .row{display:flex;gap:8px;margin-bottom:10px;}
+  button.toggle{
+    flex:1;font-family:inherit;font-size:11px;letter-spacing:0.5px;
+    background:var(--paper);border:1px solid var(--ink);color:var(--ink);
+    padding:8px 6px;cursor:pointer;text-transform:uppercase;
+  }
+  button.toggle.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+  button.toggle:hover{border-color:var(--blue);}
+  .legend{padding:14px 18px;flex:1;overflow:auto;}
+  .legend h2{font-size:12px;letter-spacing:1px;margin:0 0 10px;text-transform:uppercase;color:var(--line);}
+  .legend-item{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px;font-size:11.5px;line-height:1.3;}
+  .legend-item.zone{cursor:pointer;padding:3px 4px;margin:0 -4px 4px;border-radius:3px;}
+  .legend-item.zone:hover{background:rgba(43,76,126,0.08);}
+  .legend-item.zone.active{background:rgba(43,76,126,0.14);outline:1px solid var(--blue);}
+  .swatch{width:13px;height:13px;flex:0 0 13px;margin-top:1px;border:1px solid var(--ink);}
+  .legend-item b{font-family:inherit;}
+  .note{
+    margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);
+    font-size:10.5px;color:var(--line);line-height:1.4;
+  }
+  .titleblock{
+    display:grid;grid-template-columns:1.4fr 1fr 0.7fr 0.7fr 1.3fr;
+    border-top:2px solid var(--ink);font-size:10.5px;
+  }
+  .titleblock div{
+    border-right:1px solid var(--ink);padding:6px 8px;
+  }
+  .titleblock div:last-child{border-right:none;}
+  .titleblock .tb-label{display:block;color:var(--line);font-size:8.5px;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:2px;}
+  .titleblock .tb-val{font-weight:700;}
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="sheet-header">
+    <h1>UNIVERSAL CONTAINER DOCKING PORT SYSTEM — GC-DPS</h1>
+    <div class="sub">CONCEPTUAL 3D MODEL — NOT FOR FABRICATION</div>
+  </div>
+  <div class="main">
+    <div class="viewport-wrap">
+      <div id="viewport"></div>
+      <div id="labelLayer"></div>
+      <div class="hint">DRAG TO ROTATE &middot; SCROLL OR USE ZOOM BUTTONS</div>
+      <div class="scale-note">FRAME: 2200 × 2500 × 150mm</div>
+    </div>
+    <div class="side">
+      <div class="controls">
+        <div class="row">
+          <button class="toggle active" id="btnDocked">DOCKED</button>
+          <button class="toggle" id="btnSeparated">SEPARATED</button>
+        </div>
+        <div class="row">
+          <button class="toggle active" id="btnSpin">AUTO-ROTATE</button>
+        </div>
+        <div class="row">
+          <button class="toggle active" id="btnAllZones">ALL ZONES</button>
+        </div>
+        <div class="row">
+          <button class="toggle active" id="btnContainers">SHOW CONTAINERS</button>
+        </div>
+        <div class="row">
+          <button class="toggle" id="btnZoomOut">ZOOM &minus;</button>
+          <button class="toggle" id="btnZoomIn">ZOOM &plus;</button>
+        </div>
+      </div>
+      <div class="legend">
+        <h2>Reference Numbers <span style="font-weight:400;text-transform:none;">— click a zone to isolate</span></h2>
+        <div class="legend-item"><span class="swatch" style="background:#6b7280"></span><div><b>100</b> — Bulkhead frame (Pin-Side / Pocket-Side)</div></div>
+        <div class="legend-item"><span class="swatch" style="background:#3a3f44"></span><div><b>110</b> — Structural alignment pin</div></div>
+        <div class="legend-item"><span class="swatch" style="background:#2a2e32"></span><div><b>120</b> — Structural alignment pocket</div></div>
+        <div class="legend-item"><span class="swatch" style="background:#b8c4ce"></span><div><b>130</b> — Passageway door, inswing (opens/closes with dock state)</div></div>
+        <div class="legend-item zone" data-zone="electrical"><span class="swatch" style="background:#f2a33c"></span><div><b>200</b> — Zone 1, Electrical (210 RADSOK, 211/212/213 interlock, 214 transformer, 215 panel, 216 ATS, 217 bus, generator)</div></div>
+        <div class="legend-item zone" data-zone="data"><span class="swatch" style="background:#3dd6c7"></span><div><b>300</b> — Zone 2, Data (310 cassette / 311 switch / 320 satellite)</div></div>
+        <div class="legend-item zone" data-zone="ventilation"><span class="swatch" style="background:#7fb3d5"></span><div><b>400</b> — Zone 3, Ventilation (410/420 collars, 421 damper, 430 manifold, 431 fan, 432 heat pump)</div></div>
+        <div class="legend-item zone" data-zone="plumbing"><span class="swatch" style="background:#4c7ebf"></span><div><b>500</b> — Zone 4, Plumbing (510 connector, 520 RPZ backflow, 530 branch, tank)</div></div>
+        <div class="legend-item"><span class="swatch" style="background:#9a9484"></span><div><b>700</b> — Utility-Supply Cottage (Pin-Side, male)</div></div>
+        <div class="legend-item"><span class="swatch" style="background:#6b7280"></span><div><b>800</b> — Cottage (Pocket-Side, female)</div></div>
+        <div class="legend-item"><span class="swatch" style="background:#8a7560"></span><div>40HC container shell — 12,192 × 2,438 × 2,896mm, standard exterior dimensions. Shown semi-transparent for context; wall thickness and corrugation not modeled.</div></div>
+        <div class="note">
+          NTS — wall thickness, pin/pocket corner placement, and header-strip height are shown enlarged or estimated for visual clarity. Frame, passageway, pin, and zone dimensions are per GC-DPS_v013_LIVING.md, Section 3. Verify all fabrication dimensions against the locked master spec, not this model.
+        </div>
+      </div>
+      <div class="titleblock">
+        <div><span class="tb-label">Project</span><span class="tb-val">GC-DPS</span></div>
+        <div><span class="tb-label">Ref</span><span class="tb-val">FIG-01</span></div>
+        <div><span class="tb-label">Rev</span><span class="tb-val">3</span></div>
+        <div><span class="tb-label">Scale</span><span class="tb-val">NTS</span></div>
+        <div><span class="tb-label">Date</span><span class="tb-val" id="tbDate">—</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+document.getElementById('tbDate').textContent = new Date().toLocaleDateString('en-US',{year:'numeric',month:'2-digit',day:'2-digit'});
+
+// ---------- locked master dimensions (mm) ----------
+const FRAME_W = 2200, FRAME_H = 2500, FRAME_D = 150;
+const PASSAGE_W = 711;          // 28in clear, locked
+const PIN_D = 50, PIN_PROTRUSION = 120, PIN_CHAMFER = 15; // deg
+const POCKET_D = 51.5, POCKET_DEPTH = 125;
+
+// ---------- 40HC ISO container, industry-standard exterior dimensions ----------
+const CONTAINER_L = 12192, CONTAINER_W = 2438, CONTAINER_H = 2896;
+const DOOR_OPEN_W = 2340, DOOR_OPEN_H = 2597; // factory door-frame opening, spec Section 3.1, locked
+
+// ---------- illustrative-only assumptions (flagged to user) ----------
+const WALL_VIS = 90;            // visual border thickness (real spec: 6.35mm)
+const HEADER_H = 600;           // header strip height (not numerically locked)
+const CORNER_INSET_X = 300, CORNER_INSET_Y = 300; // pin/pocket corner placement (not numerically locked)
+const DUCT_D = 305;             // 12in duct collar, locked
+
+const offX = FRAME_W/2 - CORNER_INSET_X;
+const offY = FRAME_H/2 - CORNER_INSET_Y;
+const CHAMFER_H = (PIN_D/2) / Math.tan(PIN_CHAMFER * Math.PI/180); // true 15° taper height
+
+// ---------- materials ----------
+const M = {
+  steel:   new THREE.MeshStandardMaterial({color:0x6b7280, roughness:0.6, metalness:0.3}),
+  steelDk: new THREE.MeshStandardMaterial({color:0x9a9484, roughness:0.7, metalness:0.15}),
+  pin:     new THREE.MeshStandardMaterial({color:0x3a3f44, roughness:0.3, metalness:0.7}),
+  pocket:  new THREE.MeshStandardMaterial({color:0x2a2e32, roughness:0.5, metalness:0.4}),
+  door:    new THREE.MeshStandardMaterial({color:0xb8c4ce, roughness:0.5, metalness:0.2}),
+  elec:    new THREE.MeshStandardMaterial({color:0xf2a33c, roughness:0.5, metalness:0.2}),
+  data:    new THREE.MeshStandardMaterial({color:0x3dd6c7, roughness:0.4, metalness:0.2}),
+  vent:    new THREE.MeshStandardMaterial({color:0x7fb3d5, roughness:0.4, metalness:0.3}),
+  plumb:   new THREE.MeshStandardMaterial({color:0x4c7ebf, roughness:0.4, metalness:0.3}),
+  container: new THREE.MeshStandardMaterial({color:0x8a7560, roughness:0.8, metalness:0.1, transparent:true, opacity:0.18, side:THREE.DoubleSide}),
+};
+
+function addEdges(mesh, color){
+  const eg = new THREE.EdgesGeometry(mesh.geometry);
+  const line = new THREE.LineSegments(eg, new THREE.LineBasicMaterial({color: color||0x1c1c1a}));
+  mesh.add(line);
+  return mesh;
+}
+function box(w,h,d,mat){
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat.clone());
+  addEdges(m);
+  return m;
+}
+function cyl(r,h,mat,segs){
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,segs||24), mat.clone());
+  addEdges(m);
+  return m;
+}
+// Draws a cylinder connecting two component positions — used to show the
+// physical cable/pipe/duct path between zone components, not just the
+// components themselves. thicker = primary/docked path, thinner = standalone path.
+function connectPoints(p1, p2, mat, radius){
+  const dir = new THREE.Vector3().subVectors(p2, p1);
+  const len = dir.length();
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, len, 10), mat.clone());
+  addEdges(mesh);
+  mesh.position.copy(p1).add(p2).multiplyScalar(0.5);
+  const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+  mesh.quaternion.copy(quat);
+  return mesh;
+}
+
+// ---------- zone registry (for isolation / fading) ----------
+const zoneRegistry = {structure:[], lock:[], electrical:[], data:[], ventilation:[], plumbing:[], container:[]};
+function tag(mesh, zone){
+  mesh.userData.zone = zone;
+  mesh.userData.baseOpacity = mesh.material.opacity;
+  zoneRegistry[zone].push(mesh);
+  return mesh;
+}
+const dampers = []; // butterfly damper discs, rotation driven by dock/undock state (ref 421/422)
+const doorPivots = []; // passageway door hinges, swing driven by the same dock/undock state (ref 130)
+
+// ---------- frame builder ----------
+// zSign: +1 = body extends away from viewer toward +Z (Pocket-Side), -1 = body extends toward -Z (Pin-Side)
+// mating face for both is local z = 0
+function buildFrame(kind, zSign){
+  const g = new THREE.Group();
+  g.userData.refLabels = [];
+  function addLabel(text, x, y, z){ g.userData.refLabels.push({text, pos:new THREE.Vector3(x,y,z)}); }
+
+  const bodyMat = (kind==='pin') ? M.steelDk : M.steel;
+  const bodyZCenter = zSign * FRAME_D/2;
+
+  // outer rails (picture-frame border)
+  const top = box(FRAME_W, WALL_VIS, FRAME_D, bodyMat);
+  top.position.set(0, FRAME_H/2 - WALL_VIS/2, bodyZCenter);
+  const bottom = box(FRAME_W, WALL_VIS, FRAME_D, bodyMat);
+  bottom.position.set(0, -FRAME_H/2 + WALL_VIS/2, bodyZCenter);
+  const left = box(WALL_VIS, FRAME_H - 2*WALL_VIS, FRAME_D, bodyMat);
+  left.position.set(-FRAME_W/2 + WALL_VIS/2, 0, bodyZCenter);
+  const right = box(WALL_VIS, FRAME_H - 2*WALL_VIS, FRAME_D, bodyMat);
+  right.position.set(FRAME_W/2 - WALL_VIS/2, 0, bodyZCenter);
+  [top,bottom,left,right].forEach(m=>tag(m,'structure'));
+  g.add(top, bottom, left, right);
+  addLabel(kind==='pin' ? '700' : '800',
+    kind==='pin' ? -FRAME_W/2+40 : FRAME_W/2-40, FRAME_H/2-40, bodyZCenter*2);
+
+  // header divider beam
+  const headerY = FRAME_H/2 - HEADER_H;
+  const divider = box(FRAME_W - 2*WALL_VIS, WALL_VIS*0.5, FRAME_D, bodyMat);
+  divider.position.set(0, headerY, bodyZCenter);
+  tag(divider,'structure');
+  g.add(divider);
+
+  // --- header strip: Zone 3, Ventilation — supply/return duct collars (410/420),
+  //     mechanical auto-seal dampers (421) whose rotation is driven by dock-state
+  //     to demonstrate the cam-linkage-to-pin-travel concept (422), manifold (430),
+  //     local fan (431) and heat pump/AC (432) behind ---
+  const headerCenterY = headerY + HEADER_H/2 + WALL_VIS*0.25;
+  const ductDepth = FRAME_D*0.55;
+  const collarPositions = [];
+  [-1, 1].forEach(side=>{
+    const cx = side * FRAME_W*0.22;
+    const collar = cyl(DUCT_D/2, ductDepth, M.vent);
+    collar.rotation.x = Math.PI/2;
+    collar.position.set(cx, headerCenterY, zSign*ductDepth/2);
+    tag(collar,'ventilation');
+    g.add(collar);
+    collarPositions.push(collar.position);
+
+    const damper = new THREE.Mesh(new THREE.CircleGeometry(DUCT_D/2*0.88, 28), M.vent.clone());
+    damper.material.side = THREE.DoubleSide;
+    damper.position.set(cx, headerCenterY, zSign*8);
+    tag(damper,'ventilation');
+    g.add(damper);
+    dampers.push(damper);
+
+    addLabel(side<0 ? '410' : '420', cx, headerCenterY+DUCT_D/2+30, zSign*ductDepth/2);
+  });
+  addLabel('421 / 422', 0, headerCenterY+DUCT_D/2+60, zSign*8);
+
+  const manifold = box(FRAME_W*0.30, 130, 110, M.vent);
+  manifold.position.set(0, headerCenterY, zSign*(ductDepth+55));
+  tag(manifold,'ventilation');
+  g.add(manifold);
+  addLabel('430', 0, headerCenterY-95, zSign*(ductDepth+55));
+
+  collarPositions.forEach(cp=>{
+    const ductLink = connectPoints(cp, manifold.position, M.vent, 14);
+    tag(ductLink,'ventilation'); g.add(ductLink);
+  });
+
+  const fan = cyl(55, 60, M.vent, 20);
+  fan.rotation.z = Math.PI/2;
+  fan.position.set(-FRAME_W*0.1, headerCenterY, zSign*(ductDepth+115));
+  tag(fan,'ventilation');
+  g.add(fan);
+  addLabel('431', fan.position.x, headerCenterY-95, zSign*(ductDepth+115));
+  const fanLink = connectPoints(manifold.position, fan.position, M.vent, 12); // used in both modes
+  tag(fanLink,'ventilation'); g.add(fanLink);
+
+  const hpac = box(120, 90, 70, M.vent);
+  hpac.position.set(FRAME_W*0.1, headerCenterY, zSign*(ductDepth+115));
+  tag(hpac,'ventilation');
+  g.add(hpac);
+  addLabel('432', hpac.position.x, headerCenterY-95, zSign*(ductDepth+115));
+  const hpacLink = connectPoints(manifold.position, hpac.position, M.vent, 6); // standalone-only path
+  tag(hpacLink,'ventilation'); g.add(hpacLink);
+
+  // --- Zone 2, Data: MPO/MTP cassette (310), local network switch (311),
+  //     blind-mate guide pins/holes, satellite uplink module (320, standalone mode) ---
+  const cassette = box(220, 140, 80, M.data);
+  cassette.position.set(0, headerCenterY, zSign*40);
+  tag(cassette,'data');
+  g.add(cassette);
+  addLabel('310', 0, headerCenterY+95, zSign*40);
+
+  const netSwitch = box(150, 95, 50, M.data);
+  netSwitch.position.set(0, headerCenterY, zSign*105);
+  tag(netSwitch,'data');
+  g.add(netSwitch);
+  addLabel('311', 0, headerCenterY-95, zSign*105);
+
+  const dataLink1 = connectPoints(cassette.position, netSwitch.position, M.data, 9);
+  tag(dataLink1,'data'); g.add(dataLink1);
+
+  // guide pins (male, Pin-Side) / guide holes (female, Pocket-Side) — blind-mate alignment
+  // assumption: mirrors the structural pin/pocket male-female convention; not explicit in spec
+  if(kind === 'pin'){
+    [-90, 90].forEach(gx=>{
+      const gp = cyl(5, 26, M.pin, 12);
+      gp.rotation.x = Math.PI/2;
+      gp.position.set(gx, headerCenterY, 13);
+      tag(gp,'data');
+      g.add(gp);
+    });
+  } else {
+    [-90, 90].forEach(gx=>{
+      const gh = cyl(5.6, 26, M.pocket, 12);
+      gh.rotation.x = Math.PI/2;
+      gh.position.set(gx, headerCenterY, zSign*13);
+      tag(gh,'data');
+      g.add(gh);
+    });
+  }
+
+  const dishPole = cyl(6, 70, M.steel, 8);
+  dishPole.position.set(0, CONTAINER_H/2+35, bodyZCenter);
+  tag(dishPole,'data');
+  g.add(dishPole);
+  const dish = new THREE.Mesh(new THREE.ConeGeometry(45, 18, 16, 1, true), M.data.clone());
+  addEdges(dish);
+  dish.rotation.x = Math.PI*0.62;
+  dish.position.set(0, CONTAINER_H/2+78, bodyZCenter);
+  tag(dish,'data');
+  g.add(dish);
+  addLabel('320', 0, CONTAINER_H/2+115, bodyZCenter);
+
+  const dataLink2 = connectPoints(netSwitch.position, dishPole.position, M.data, 5); // standalone uplink path
+  tag(dataLink2,'data'); g.add(dataLink2);
+
+  // --- main body: passageway centered, electrical (left) / plumbing (right) columns ---
+  const bodyTop = headerY - WALL_VIS*0.25;
+  const bodyBottom = -FRAME_H/2 + WALL_VIS;
+  const bodyH = bodyTop - bodyBottom;
+  const bodyCenterY = (bodyTop + bodyBottom)/2;
+  const floorY = -CONTAINER_H/2; // container floor — standalone equipment sits here
+  const interiorW = FRAME_W - 2*WALL_VIS;
+  const colW = (interiorW - PASSAGE_W)/2;
+
+  const elecCol = box(colW, bodyH, FRAME_D*0.5, M.elec);
+  elecCol.position.set(-(PASSAGE_W/2 + colW/2), bodyCenterY, bodyZCenter);
+  const plumbCol = box(colW, bodyH, FRAME_D*0.5, M.plumb);
+  plumbCol.position.set(PASSAGE_W/2 + colW/2, bodyCenterY, bodyZCenter);
+  tag(elecCol,'electrical'); tag(plumbCol,'plumbing');
+  g.add(elecCol, plumbCol);
+  addLabel('200', elecCol.position.x, bodyCenterY+bodyH*0.3, bodyZCenter);
+  addLabel('500', plumbCol.position.x, bodyCenterY+bodyH*0.3, bodyZCenter);
+
+  // small connector details
+  // --- Zone 1, Electrical: RADSOK dock connector (210), disconnect switch (211),
+  //     gate-plate interlock (212) tied to the disconnect via a linkage rod (213),
+  //     pass-through bus (217), step-down transformer (214), automatic transfer
+  //     switch (216), 200A panel (215), and a standalone generator ---
+  const elecX = elecCol.position.x;
+
+  const radsok = box(90, 70, 40, M.elec);
+  radsok.position.set(elecX, bodyCenterY, zSign*25);
+  tag(radsok,'electrical');
+  g.add(radsok);
+  addLabel('210', elecX, bodyCenterY+90, zSign*25);
+
+  const disconnect = box(55, 50, 40, M.elec);
+  disconnect.position.set(elecX - colW*0.3, bodyCenterY, zSign*60);
+  tag(disconnect,'electrical');
+  g.add(disconnect);
+  addLabel('211', disconnect.position.x, bodyCenterY-90, zSign*60);
+
+  const gatePlate = box(75, 85, 8, M.elec);
+  gatePlate.position.set(elecX, bodyCenterY, zSign*58);
+  tag(gatePlate,'electrical');
+  g.add(gatePlate);
+  addLabel('212', elecX, bodyCenterY+90, zSign*58);
+
+  const linkageRod = cyl(4, colW*0.3, M.pin, 8);
+  linkageRod.rotation.z = Math.PI/2;
+  linkageRod.position.set((elecX + disconnect.position.x)/2, bodyCenterY, zSign*59);
+  tag(linkageRod,'electrical');
+  g.add(linkageRod);
+  addLabel('213', linkageRod.position.x, bodyCenterY-90, zSign*59);
+
+  const bus = box(45, 25, 150, M.elec);
+  bus.position.set(elecX + colW*0.3, bodyCenterY, zSign*130);
+  tag(bus,'electrical');
+  g.add(bus);
+  addLabel('217', bus.position.x, bodyCenterY+90, zSign*130);
+
+  const transformer = box(160, 140, 110, M.elec);
+  transformer.position.set(elecX, bodyCenterY, zSign*195);
+  tag(transformer,'electrical');
+  g.add(transformer);
+  addLabel('214', elecX, bodyCenterY-100, zSign*195);
+
+  const ats = box(100, 75, 65, M.elec);
+  ats.position.set(elecX - colW*0.28, bodyCenterY, zSign*250);
+  tag(ats,'electrical');
+  g.add(ats);
+  addLabel('216', ats.position.x, bodyCenterY+90, zSign*250);
+
+  const panel = box(130, 170, 40, M.elec);
+  panel.position.set(elecX + colW*0.28, bodyCenterY, zSign*250);
+  tag(panel,'electrical');
+  g.add(panel);
+  addLabel('215', panel.position.x, bodyCenterY+115, zSign*250);
+
+  const elecLinks = [
+    connectPoints(radsok.position, disconnect.position, M.elec, 10),
+    connectPoints(disconnect.position, bus.position, M.elec, 10),
+    connectPoints(bus.position, transformer.position, M.elec, 10),
+    connectPoints(transformer.position, ats.position, M.elec, 10),
+    connectPoints(ats.position, panel.position, M.elec, 10),
+  ];
+  elecLinks.forEach(l=>{ tag(l,'electrical'); g.add(l); });
+
+  const generator = box(140, 100, 180, M.elec);
+  generator.position.set(-CONTAINER_W/2 - 150, floorY + 50, bodyZCenter);
+  tag(generator,'electrical');
+  g.add(generator);
+  addLabel('GENERATOR', generator.position.x, generator.position.y+75, generator.position.z);
+
+  const genLink = connectPoints(generator.position, ats.position, M.elec, 8); // standalone power path
+  tag(genLink,'electrical'); g.add(genLink);
+  // --- Zone 4, Plumbing: dry-break quick-disconnect (510), pass-through branch
+  //     upstream of RPZ (530), Watts 009 RPZ backflow preventer (520), and a
+  //     ground-mounted standalone water tank / cistern ---
+  const plumbX = plumbCol.position.x;
+
+  const connector = cyl(42, 50, M.plumb, 20);
+  connector.rotation.x = Math.PI/2;
+  connector.position.set(plumbX, bodyCenterY, zSign*25);
+  tag(connector,'plumbing');
+  g.add(connector);
+  addLabel('510', plumbX, bodyCenterY+90, zSign*25);
+
+  const branchStub = cyl(14, 70, M.plumb, 14);
+  branchStub.rotation.z = Math.PI/2;
+  branchStub.position.set(plumbX + colW*0.32, bodyCenterY, zSign*85);
+  tag(branchStub,'plumbing');
+  g.add(branchStub);
+  addLabel('530', branchStub.position.x, bodyCenterY+90, zSign*85);
+
+  const plumbLink1 = connectPoints(connector.position, branchStub.position, M.plumb, 14);
+  tag(plumbLink1,'plumbing'); g.add(plumbLink1);
+  const plumbLink2 = connectPoints(branchStub.position, new THREE.Vector3(plumbX, bodyCenterY, zSign*190), M.plumb, 14);
+  tag(plumbLink2,'plumbing'); g.add(plumbLink2);
+
+  const rpzBody = cyl(28, 90, M.plumb, 18);
+  rpzBody.rotation.x = Math.PI/2;
+  rpzBody.position.set(plumbX, bodyCenterY, zSign*190);
+  tag(rpzBody,'plumbing');
+  g.add(rpzBody);
+  [-1,1].forEach(s=>{
+    const testCock = cyl(7, 26, M.plumb, 10);
+    testCock.rotation.z = Math.PI/2;
+    testCock.position.set(plumbX + s*34, bodyCenterY, zSign*190);
+    tag(testCock,'plumbing');
+    g.add(testCock);
+  });
+  addLabel('520', plumbX, bodyCenterY-90, zSign*190);
+
+  const tankH = 160;
+  const tank = cyl(65, tankH, M.plumb, 24);
+  tank.position.set(CONTAINER_W/2 + 150, floorY + tankH/2, bodyZCenter);
+  tag(tank,'plumbing');
+  g.add(tank);
+  addLabel('TANK', tank.position.x, tank.position.y + tankH/2 + 25, tank.position.z);
+
+  const plumbStandalone = connectPoints(tank.position, connector.position, M.plumb, 7); // standalone source path
+  tag(plumbStandalone,'plumbing'); g.add(plumbStandalone);
+
+  // passageway door (130) — single-leaf, inswing, hinged on the left edge.
+  // Swing is driven by the same dock/undock state as the ventilation dampers:
+  // opens automatically on dock, seals shut on undock, no separate control —
+  // matching the spec's description of the actuation linkage.
+  const doorW = PASSAGE_W*0.94, doorH = bodyH*0.96, doorT = FRAME_D*0.25;
+  const doorPivot = new THREE.Group();
+  doorPivot.position.set(-doorW/2, bodyCenterY, zSign*10);
+  const doorPanel = box(doorW, doorH, doorT, M.door);
+  doorPanel.position.set(doorW/2, 0, 0);
+  tag(doorPanel,'structure');
+  doorPivot.add(doorPanel);
+  doorPivot.userData.swingSign = -zSign;
+  doorPivots.push(doorPivot);
+  g.add(doorPivot);
+  addLabel('130', -doorW/2, bodyBottom-60, zSign*10);
+
+  // pins (Pin-Side) or pockets (Pocket-Side), diagonal corners at (+offX,+offY) and (-offX,-offY)
+  const corners = [[offX, offY], [-offX, -offY]];
+  if(kind === 'pin'){
+    corners.forEach(([cx,cy])=>{
+      const pin = cyl(PIN_D/2, PIN_PROTRUSION, M.pin);
+      pin.rotation.x = Math.PI/2;
+      pin.position.set(cx, cy, PIN_PROTRUSION/2);
+      tag(pin,'lock');
+      g.add(pin);
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(PIN_D/2, CHAMFER_H, 24), M.pin.clone());
+      addEdges(tip);
+      tip.rotation.x = Math.PI/2;
+      tip.position.set(cx, cy, PIN_PROTRUSION + CHAMFER_H/2);
+      tag(tip,'lock');
+      g.add(tip);
+    });
+    addLabel('110', offX, offY, PIN_PROTRUSION*0.5);
+  } else {
+    corners.forEach(([cx,cy])=>{
+      const pocket = cyl(POCKET_D/2, POCKET_DEPTH, M.pocket);
+      pocket.rotation.x = Math.PI/2;
+      pocket.position.set(cx, cy, zSign*POCKET_DEPTH/2);
+      tag(pocket,'lock');
+      g.add(pocket);
+      const rim = new THREE.Mesh(new THREE.RingGeometry(POCKET_D/2, POCKET_D/2+18, 32), M.pocket.clone());
+      rim.position.set(cx, cy, 1*zSign*0.1);
+      tag(rim,'lock');
+      g.add(rim);
+    });
+    addLabel('120', offX, offY, zSign*10);
+  }
+
+  addContainerShell(g, zSign);
+
+  return g;
+}
+
+// ---------- 40HC ISO container shell (context/scale only, not a fabrication
+//     model — corrugation and true wall thickness are not represented) ----------
+function addContainerShell(g, zSign){
+  const wallT = 20;
+  const cw2 = CONTAINER_W/2, ch2 = CONTAINER_H/2;
+  const farZ = zSign * CONTAINER_L;
+  const nearZ = zSign * 6;
+  const midZ = zSign * CONTAINER_L/2;
+
+  // near-end wall, with the factory door-frame opening (border rails, same
+  // technique as the bulkhead frame itself)
+  const marginX = (CONTAINER_W - DOOR_OPEN_W)/2, marginY = (CONTAINER_H - DOOR_OPEN_H)/2;
+  const nTop = box(CONTAINER_W, marginY, wallT, M.container);
+  nTop.position.set(0, ch2 - marginY/2, nearZ);
+  const nBottom = box(CONTAINER_W, marginY, wallT, M.container);
+  nBottom.position.set(0, -ch2 + marginY/2, nearZ);
+  const nLeft = box(marginX, DOOR_OPEN_H, wallT, M.container);
+  nLeft.position.set(-cw2 + marginX/2, 0, nearZ);
+  const nRight = box(marginX, DOOR_OPEN_H, wallT, M.container);
+  nRight.position.set(cw2 - marginX/2, 0, nearZ);
+  [nTop,nBottom,nLeft,nRight].forEach(m=>tag(m,'container'));
+  g.add(nTop, nBottom, nLeft, nRight);
+
+  // far-end wall (solid, no opening modeled — out of scope for this view)
+  const farWall = box(CONTAINER_W, CONTAINER_H, wallT, M.container);
+  farWall.position.set(0, 0, farZ);
+  tag(farWall,'container');
+  g.add(farWall);
+
+  // long top/bottom/side panels spanning the full container length
+  const top = box(CONTAINER_W, wallT, CONTAINER_L, M.container);
+  top.position.set(0, ch2, midZ);
+  const bottom = box(CONTAINER_W, wallT, CONTAINER_L, M.container);
+  bottom.position.set(0, -ch2, midZ);
+  const left = box(wallT, CONTAINER_H, CONTAINER_L, M.container);
+  left.position.set(-cw2, 0, midZ);
+  const right = box(wallT, CONTAINER_H, CONTAINER_L, M.container);
+  right.position.set(cw2, 0, midZ);
+  [top,bottom,left,right].forEach(m=>tag(m,'container'));
+  g.add(top, bottom, left, right);
+
+  // corner castings (near end only) for a recognizable ISO container silhouette
+  const cs = 150;
+  [[-cw2,ch2],[cw2,ch2],[-cw2,-ch2],[cw2,-ch2]].forEach(([cx,cy])=>{
+    const casting = box(cs*0.6, cs, cs*0.6, M.steel);
+    casting.position.set(cx, cy, nearZ);
+    tag(casting,'container');
+    g.add(casting);
+  });
+}
+
+
+// ---------- scene setup ----------
+const viewportEl = document.getElementById('viewport');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf3efe4);
+
+const camera = new THREE.PerspectiveCamera(40, 1, 1, 20000);
+const renderer = new THREE.WebGLRenderer({antialias:true});
+viewportEl.appendChild(renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+const key = new THREE.DirectionalLight(0xffffff, 0.9);
+key.position.set(1500, 2000, 2500);
+scene.add(key);
+const fill = new THREE.DirectionalLight(0xffffff, 0.35);
+fill.position.set(-1800, -800, -1500);
+scene.add(fill);
+
+const grid = new THREE.GridHelper(16000, 64, 0x5b7ba3, 0xc9c2ad);
+grid.position.y = -CONTAINER_H/2;
+scene.add(grid);
+
+const pinGroup = buildFrame('pin', -1);
+const pocketGroup = buildFrame('pocket', 1);
+pinGroup.position.z = 0;
+let gap = 0;
+pocketGroup.position.z = gap;
+
+const assembly = new THREE.Group();
+assembly.add(pinGroup, pocketGroup);
+scene.add(assembly);
+
+// reference labels (700/800, 110/120, 130, 200/500, 310/311/320, 410/420)
+// are generated internally by buildFrame() on both groups
+
+const labelLayer = document.getElementById('labelLayer');
+labelLayer.style.position='absolute';
+labelLayer.style.top='0';labelLayer.style.left='0';
+labelLayer.style.width='100%';labelLayer.style.height='100%';
+labelLayer.style.pointerEvents='none';
+viewportEl.style.position='relative';
+
+function makeLabelEl(text){
+  const d = document.createElement('div');
+  d.className='label';
+  d.textContent = text;
+  labelLayer.appendChild(d);
+  return d;
+}
+const dynLabelEls = [];
+pinGroup.userData.refLabels.forEach(l=>{
+  dynLabelEls.push({el:makeLabelEl(l.text), getWorld:()=>pinGroup.localToWorld(l.pos.clone())});
+});
+pocketGroup.userData.refLabels.forEach(l=>{
+  dynLabelEls.push({el:makeLabelEl(l.text), getWorld:()=>pocketGroup.localToWorld(l.pos.clone())});
+});
+
+function projectLabel(el, worldPos){
+  const v = worldPos.clone().project(camera);
+  const x = (v.x*0.5+0.5)*viewportEl.clientWidth;
+  const y = (-v.y*0.5+0.5)*viewportEl.clientHeight;
+  if(v.z > 1){ el.style.display='none'; return; }
+  el.style.display='block';
+  el.style.left = x+'px';
+  el.style.top = y+'px';
+}
+
+// ---------- manual orbit camera ----------
+let radius = 4200, theta = Math.PI*0.22, phi = Math.PI*0.38;
+const camTarget = new THREE.Vector3(0, 0, FRAME_D/2);
+let flyTarget = camTarget.clone();
+let flyRadius = radius;
+let dragging=false, lastX=0, lastY=0;
+let autoSpin = true;
+
+function updateCamera(){
+  camera.position.x = camTarget.x + radius*Math.sin(phi)*Math.sin(theta);
+  camera.position.y = camTarget.y + radius*Math.cos(phi);
+  camera.position.z = camTarget.z + radius*Math.sin(phi)*Math.cos(theta);
+  camera.lookAt(camTarget);
+}
+viewportEl.addEventListener('pointerdown', e=>{dragging=true;lastX=e.clientX;lastY=e.clientY;autoSpin=false;setSpinBtn(false);});
+window.addEventListener('pointerup', ()=>dragging=false);
+window.addEventListener('pointermove', e=>{
+  if(!dragging) return;
+  const dx = e.clientX-lastX, dy = e.clientY-lastY;
+  lastX=e.clientX; lastY=e.clientY;
+  theta -= dx*0.006;
+  phi = Math.max(0.15, Math.min(Math.PI-0.15, phi - dy*0.006));
+});
+viewportEl.addEventListener('wheel', e=>{
+  e.preventDefault();
+  radius = Math.max(1400, Math.min(20000, radius*(1+e.deltaY*0.001)));
+}, {passive:false});
+
+// ---------- zone isolation ----------
+let isolatedZone = null;
+function setIsolation(zone){
+  isolatedZone = zone;
+  Object.keys(zoneRegistry).forEach(zk=>{
+    zoneRegistry[zk].forEach(mesh=>{
+      const active = (zone===null) || (zk===zone);
+      mesh.children.forEach(c=>{ if(c.isLineSegments) c.visible = active; });
+      mesh.material.transparent = true;
+      mesh.material.opacity = active ? mesh.userData.baseOpacity : 0.05;
+      mesh.material.depthWrite = active;
+    });
+  });
+  if(zone){
+    const box3 = new THREE.Box3();
+    let has=false;
+    zoneRegistry[zone].forEach(mesh=>{ box3.expandByObject(mesh); has=true; });
+    if(has){
+      const center = box3.getCenter(new THREE.Vector3());
+      const size = box3.getSize(new THREE.Vector3());
+      flyTarget = center;
+      flyRadius = Math.max(size.x, size.y, size.z) * 2.4 + 350;
+    }
+  } else {
+    flyTarget = new THREE.Vector3(0, 0, FRAME_D/2);
+    flyRadius = 4200;
+  }
+}
+
+// ---------- resize ----------
+function resize(){
+  const w = viewportEl.clientWidth, h = viewportEl.clientHeight;
+  renderer.setSize(w,h);
+  camera.aspect = w/h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+
+// ---------- docked / separated toggle ----------
+const SEP_GAP = 500;
+let targetGap = 0;
+document.getElementById('btnDocked').addEventListener('click', e=>{
+  targetGap = 0; setToggle(e.target);
+});
+document.getElementById('btnSeparated').addEventListener('click', e=>{
+  targetGap = SEP_GAP; setToggle(e.target);
+});
+function setToggle(active){
+  document.getElementById('btnDocked').classList.toggle('active', active.id==='btnDocked');
+  document.getElementById('btnSeparated').classList.toggle('active', active.id==='btnSeparated');
+}
+document.getElementById('btnSpin').addEventListener('click', e=>{
+  autoSpin = !autoSpin;
+  setSpinBtn(autoSpin);
+});
+function setSpinBtn(on){
+  document.getElementById('btnSpin').classList.toggle('active', on);
+}
+
+const zoneItems = Array.from(document.querySelectorAll('.legend-item.zone'));
+const btnAllZones = document.getElementById('btnAllZones');
+zoneItems.forEach(item=>{
+  item.addEventListener('click', ()=>{
+    const z = item.dataset.zone;
+    if(isolatedZone === z){
+      setIsolation(null);
+      zoneItems.forEach(i=>i.classList.remove('active'));
+      btnAllZones.classList.add('active');
+    } else {
+      setIsolation(z);
+      zoneItems.forEach(i=>i.classList.toggle('active', i===item));
+      btnAllZones.classList.remove('active');
+    }
+  });
+});
+btnAllZones.addEventListener('click', ()=>{
+  setIsolation(null);
+  zoneItems.forEach(i=>i.classList.remove('active'));
+  btnAllZones.classList.add('active');
+});
+
+const btnContainers = document.getElementById('btnContainers');
+let containersVisible = true;
+btnContainers.addEventListener('click', ()=>{
+  containersVisible = !containersVisible;
+  zoneRegistry.container.forEach(m=>{ m.visible = containersVisible; });
+  btnContainers.classList.toggle('active', containersVisible);
+});
+
+// ---------- zoom buttons (click for a step, hold for continuous) ----------
+const ZOOM_STEP = 0.85;
+function zoomBy(factor){
+  flyRadius = Math.max(1400, Math.min(20000, flyRadius*factor));
+}
+let zoomTimer = null;
+function startZoom(factor){
+  stopZoom();
+  zoomBy(factor);
+  zoomTimer = setInterval(()=>zoomBy(factor), 110);
+}
+function stopZoom(){
+  if(zoomTimer){ clearInterval(zoomTimer); zoomTimer = null; }
+}
+const btnZoomIn = document.getElementById('btnZoomIn');
+const btnZoomOut = document.getElementById('btnZoomOut');
+btnZoomIn.addEventListener('pointerdown', e=>{ e.preventDefault(); startZoom(ZOOM_STEP); });
+btnZoomOut.addEventListener('pointerdown', e=>{ e.preventDefault(); startZoom(1/ZOOM_STEP); });
+[btnZoomIn, btnZoomOut].forEach(b=>{
+  b.addEventListener('pointerleave', stopZoom);
+  b.addEventListener('pointercancel', stopZoom);
+});
+window.addEventListener('pointerup', stopZoom);
+
+resize();
+
+// ---------- render loop ----------
+function animate(){
+  requestAnimationFrame(animate);
+  gap += (targetGap-gap)*0.08;
+  pocketGroup.position.z = gap;
+  const dockFactor = 1 - Math.min(1, gap/SEP_GAP); // 1 = fully docked, 0 = fully separated
+  dampers.forEach(d=>{ d.rotation.y = dockFactor * Math.PI/2; });
+  const doorOpenAngle = Math.PI/2 * 0.95;
+  doorPivots.forEach(p=>{ p.rotation.y = p.userData.swingSign * dockFactor * doorOpenAngle; });
+  if(autoSpin) theta += 0.0035;
+  camTarget.lerp(flyTarget, 0.08);
+  radius += (flyRadius-radius)*0.08;
+  updateCamera();
+  renderer.render(scene, camera);
+
+  dynLabelEls.forEach(d=>projectLabel(d.el, d.getWorld()));
+}
+animate();
+</script>
+</body>
+</html>

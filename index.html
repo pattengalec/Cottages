@@ -736,6 +736,7 @@ var zoneHintEl   = document.getElementById('zone-hint');
 // PLAYBACK STATE
 // ============================================================
 var current = 0;
+var modelTimer = null;
 
 // ============================================================
 // AUDIO
@@ -1210,7 +1211,12 @@ function renderScene(idx) {
 
   // Cards scene — full two-card split layout
   if (s.cards) {
+    clearTimeout(modelTimer);
     contentEl.style.display = 'none';
+    showModel(null);
+    zoneHintEl.classList.remove('show');
+    closeZoneDetail();
+    modelLblEl.style.opacity = '0';
     var cw = document.getElementById('cards-wrap');
     if (!cw) {
       cw = document.createElement('div');
@@ -1256,17 +1262,22 @@ function renderScene(idx) {
     var navNext = document.getElementById('nav-next');
     navPrev.classList.remove('hidden');
     navNext.classList.add('hidden');
+    navNext.style.display = 'none';
     progBar.style.width = '100%';
     return;
   }
+
+  // Restore next button display for non-cards scenes
+  document.getElementById('nav-next').style.display = '';
 
   // All other scenes — hide cards-wrap if present
   contentEl.style.display = '';
   var cwOld = document.getElementById('cards-wrap');
   if (cwOld) cwOld.style.display = 'none';
 
-  // Model — defer so content renders first
-  setTimeout(function() {
+  // Model — defer so content renders first, cancel any previous pending init
+  clearTimeout(modelTimer);
+  modelTimer = setTimeout(function() {
     try {
       if (s.model) {
         showModel(s.model);

@@ -210,6 +210,107 @@ html, body {
   transition: opacity 0.6s ease 0.4s;
 }
 
+/* ---- TWO-CARD SPLIT (scene 7) ---- */
+#cards-wrap {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: 24px;
+  padding: 2rem;
+  width: 100vw;
+  max-width: 960px;
+  margin: 0 auto;
+  align-items: stretch;
+}
+.grush-card {
+  flex: 1;
+  background: rgba(0,0,0,0.55);
+  border: 0.5px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 2.2rem 2rem 1.8rem;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease, border-color 0.25s ease, background 0.25s ease;
+  text-align: left;
+}
+.grush-card.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+.grush-card:hover {
+  background: rgba(0,0,0,0.72);
+  border-color: rgba(0,200,255,0.25);
+}
+.grush-card.card-dps  { transition-delay: 0.1s; border-top: 2px solid var(--cyan); }
+.grush-card.card-cott { transition-delay: 0.22s; border-top: 2px solid var(--amber); }
+.card-eyebrow {
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 0.7rem;
+}
+.card-dps  .card-eyebrow { color: var(--cyan); }
+.card-cott .card-eyebrow { color: var(--amber); }
+.card-headline {
+  font-size: clamp(18px, 2.2vw, 26px);
+  font-weight: 300;
+  color: var(--white);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.9rem;
+}
+.card-body {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--steel);
+  flex: 1;
+  margin-bottom: 1.4rem;
+}
+.card-specs {
+  margin-bottom: 1.4rem;
+}
+.card-spec-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-top: 0.5px solid rgba(255,255,255,0.06);
+  font-size: 10.5px;
+}
+.card-spec-label { color: var(--dim); }
+.card-spec-val   { color: #a8bec8; text-align: right; }
+.card-cta {
+  display: inline-block;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  margin-bottom: 1.2rem;
+  transition: background 0.2s ease;
+  cursor: pointer;
+  text-align: center;
+}
+.card-dps  .card-cta { background: rgba(0,200,255,0.12); border: 1px solid rgba(0,200,255,0.4); color: var(--cyan); }
+.card-cott .card-cta { background: rgba(255,184,48,0.1);  border: 1px solid rgba(255,184,48,0.4); color: var(--amber); }
+.card-dps  .card-cta:hover { background: rgba(0,200,255,0.24); }
+.card-cott .card-cta:hover { background: rgba(255,184,48,0.22); }
+.card-contact {
+  font-size: 10px;
+  color: var(--dim);
+  letter-spacing: 0.06em;
+  border-top: 0.5px solid rgba(255,255,255,0.06);
+  padding-top: 0.9rem;
+  margin-top: auto;
+}
+.card-contact a {
+  color: var(--dim);
+  text-decoration: none;
+}
+.card-contact a:hover { color: var(--steel); }
+
 /* ---- SHOW CLASS ---- */
 .show { opacity: 1 !important; }
 
@@ -608,15 +709,12 @@ var scenes = [
     model: 'dps', modelMode: 'docked', modelBg: false, clickable: true,
     modelLabel: 'GC-DPS — click a zone'
   },
-  // 7 — CTA
+  // 7 — Two-card split
   {
-    id: 'cta',
+    id: 'cards',
     bg: '#050a18',
-    eyebrow: 'Grush Cottages',
-    headline: 'The spec exists.\nThe patent is filed.\nReady for a build partner.',
-    body: 'Seeking pilot deployment sites, licensed fabricators, and investors. The GC-DPS is ready for prototype construction.',
-    accent: true,
-    caption: 'chad@getgrush.com  ·  getgrush.com',
+    cards: true,
+    caption: '',
     autoAdvance: false,
     model: false
   }
@@ -1110,23 +1208,84 @@ function renderScene(idx) {
   stageEl.style.background=s.bg;
   stageEl.style.transition='background 1.2s ease';
 
-  // Model
-  if (s.model) {
-    showModel(s.model);
-    if (s.model==='dps') {
-      setModelMode(s.modelMode, s.clickable);
-      modelLblEl.textContent=s.modelLabel||'';
-      modelLblEl.style.opacity='1';
-    } else {
-      modelLblEl.style.opacity='0';
-      zoneHintEl.classList.remove('show');
+  // Cards scene — full two-card split layout
+  if (s.cards) {
+    contentEl.style.display = 'none';
+    var cw = document.getElementById('cards-wrap');
+    if (!cw) {
+      cw = document.createElement('div');
+      cw.id = 'cards-wrap';
+      stageEl.appendChild(cw);
     }
-  } else {
-    showModel(null);
-    modelLblEl.style.opacity='0';
-    zoneHintEl.classList.remove('show');
-    closeZoneDetail();
+    cw.style.display = 'flex';
+    cw.innerHTML = `
+      <div class="grush-card card-dps">
+        <div class="card-eyebrow">GC-DPS — Patent Pending</div>
+        <div class="card-headline">The Grush Cottages<br>Docking Port System</div>
+        <div class="card-body">A standardized steel bulkhead that retrofits into any shipping container's factory door frame. Routes power, data, air, and water through a single mechanical interface. Zero-power locking. Fabrication-ready CAD. Provisional patent on file.</div>
+        <div class="card-specs">
+          <div class="card-spec-row"><span class="card-spec-label">Patent application</span><span class="card-spec-val">#64/093,343</span></div>
+          <div class="card-spec-row"><span class="card-spec-label">Filing date</span><span class="card-spec-val">June 18, 2026</span></div>
+          <div class="card-spec-row"><span class="card-spec-label">Mounting</span><span class="card-spec-val">Retrofits 40HC door frame</span></div>
+          <div class="card-spec-row"><span class="card-spec-label">Locking</span><span class="card-spec-val">Zero-power mechanical pin</span></div>
+          <div class="card-spec-row"><span class="card-spec-label">Utility zones</span><span class="card-spec-val">Power · Data · Air · Water</span></div>
+        </div>
+        <a class="card-cta" href="mailto:chad@getgrush.com?subject=GC-DPS Inquiry">Inquire about GC-DPS &rarr;</a>
+        <div class="card-contact">Seeking fabricators, pilot sites &amp; investors<br><a href="mailto:chad@getgrush.com">chad@getgrush.com</a> &nbsp;·&nbsp; <a href="https://getgrush.com" target="_blank">getgrush.com</a></div>
+      </div>
+      <div class="grush-card card-cott">
+        <div class="card-eyebrow">Grush Cottages</div>
+        <div class="card-headline">Self-contained,<br>connectable units.</div>
+        <div class="card-body">Fully equipped shipping container deployments built around the GC-DPS. Each Cottage operates standalone or docks inline with other units — sharing the full utility network through a single port connection. No separate trade callouts. Predictable cost at any scale.</div>
+        <div class="card-specs">
+          <div class="card-spec-row"><span class="card-spec-label">Connection type</span><span class="card-spec-val">Linear chain, port-to-port</span></div>
+          <div class="card-spec-row"><span class="card-spec-label">Utility transfer</span><span class="card-spec-val">Power · Data · Air · Water</span></div>
+          <div class="card-spec-row"><span class="card-spec-label">Standalone capable</span><span class="card-spec-val">Yes — generator + tank</span></div>
+          <div class="card-spec-row"><span class="card-spec-label">Scale model</span><span class="card-spec-val">Add units, same port spec</span></div>
+          <div class="card-spec-row"><span class="card-spec-label">Status</span><span class="card-spec-val">Seeking pilot deployment</span></div>
+        </div>
+        <a class="card-cta" href="mailto:chad@getgrush.com?subject=Cottages Inquiry">Inquire about Cottages &rarr;</a>
+        <div class="card-contact">Seeking pilot sites, operators &amp; investors<br><a href="mailto:chad@getgrush.com">chad@getgrush.com</a> &nbsp;·&nbsp; <a href="https://getgrush.com" target="_blank">getgrush.com</a></div>
+      </div>`;
+    setTimeout(function(){
+      cw.querySelectorAll('.grush-card').forEach(function(c){ c.classList.add('show'); });
+    }, 60);
+    captionEl.textContent = '';
+    sceneNumEl.textContent = '8 / 8';
+    var navPrev = document.getElementById('nav-prev');
+    var navNext = document.getElementById('nav-next');
+    navPrev.classList.remove('hidden');
+    navNext.classList.add('hidden');
+    progBar.style.width = '100%';
+    return;
   }
+
+  // All other scenes — hide cards-wrap if present
+  contentEl.style.display = '';
+  var cwOld = document.getElementById('cards-wrap');
+  if (cwOld) cwOld.style.display = 'none';
+
+  // Model — defer so content renders first
+  setTimeout(function() {
+    try {
+      if (s.model) {
+        showModel(s.model);
+        if (s.model==='dps') {
+          setModelMode(s.modelMode, s.clickable);
+          modelLblEl.textContent = s.modelLabel||'';
+          modelLblEl.style.opacity = '1';
+        } else {
+          modelLblEl.style.opacity = '0';
+          zoneHintEl.classList.remove('show');
+        }
+      } else {
+        showModel(null);
+        modelLblEl.style.opacity = '0';
+        zoneHintEl.classList.remove('show');
+        closeZoneDetail();
+      }
+    } catch(e) { console.warn('Model init failed:', e); showModel(null); }
+  }, 50);
 
   // Overlay vs centered content
   var isBg = s.model && s.modelBg;

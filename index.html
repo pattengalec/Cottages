@@ -3,66 +3,388 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Grush Cottages</title>
+<title>Grush Cottages — GC-DPS</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { height: 100%; background: #0a0a0a; color: #fff; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; overflow: hidden; }
-#stage { width: 100vw; height: 100vh; position: relative; display: flex; align-items: center; justify-content: center; }
-#three-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; opacity: 0; transition: opacity 1.4s ease; pointer-events: none; }
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --navy:      #050a18;
+  --cyan:      #00c8ff;
+  --chart:     #c8ff00;
+  --amber:     #ffb830;
+  --steel:     #8aaab8;
+  --dim:       #3a5060;
+  --dimmer:    #1e2e38;
+  --white:     #eef2f4;
+  --card-bg:   rgba(0,0,0,0.52);
+  --card-bdr:  rgba(255,255,255,0.08);
+}
+
+html, body {
+  height: 100%;
+  background: var(--navy);
+  color: var(--white);
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  overflow: hidden;
+}
+
+/* ---- STAGE ---- */
+#stage {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---- 3D CANVAS ---- */
+#three-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 1.4s ease;
+  pointer-events: none;
+}
+#three-canvas.visible { opacity: 1; }
 #three-canvas.clickable { pointer-events: auto; cursor: pointer; }
 #three-canvas canvas { width: 100% !important; height: 100% !important; }
-#content-wrap { position: relative; z-index: 2; text-align: center; max-width: 660px; padding: 2rem; }
-.eyebrow { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: #607a88; margin-bottom: 1rem; opacity: 0; transition: opacity 0.7s ease; }
-.accent-line { width: 32px; height: 2px; background: #4a7a96; margin: 0 auto 1.1rem; opacity: 0; transition: opacity 0.7s ease 0.1s; }
-.headline { font-size: clamp(20px, 3.5vw, 32px); font-weight: 400; line-height: 1.25; color: #eef2f4; margin-bottom: 1rem; opacity: 0; transition: opacity 0.7s ease 0.2s; letter-spacing: -0.01em; }
-.body-text { font-size: clamp(13px, 1.6vw, 15px); line-height: 1.72; color: #7a96a4; opacity: 0; transition: opacity 0.7s ease 0.35s; max-width: 520px; margin: 0 auto; }
-.spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 1.2rem; opacity: 0; transition: opacity 0.7s ease 0.35s; text-align: left; }
-.spec-card { background: rgba(0,0,0,0.55); border: 0.5px solid rgba(255,255,255,0.09); border-radius: 6px; padding: 0.6rem 0.85rem; }
-.spec-label { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: #4a6070; margin-bottom: 3px; }
-.spec-val { font-size: 13px; color: #b8ccd6; font-weight: 500; }
-.zones-wrap { margin-top: 1.1rem; width: 100%; text-align: left; }
-.dps-zone { display: flex; align-items: flex-start; gap: 10px; border-left: 1.5px solid #4a7a96; padding: 0.55rem 0.85rem; margin: 5px 0; opacity: 0; transition: opacity 0.6s ease, border-color 0.3s ease, background 0.3s ease; background: rgba(0,0,0,0.45); }
-.dps-zone-name { font-size: 12px; font-weight: 500; color: #a8bec8; margin-bottom: 2px; }
-.dps-zone-text { font-size: 11px; color: #607888; line-height: 1.45; }
-.show { opacity: 1 !important; }
-#caption-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 2rem 2rem 1.2rem; background: linear-gradient(transparent, rgba(0,0,0,0.82)); pointer-events: none; z-index: 10; }
-#caption-text { font-size: 13px; color: #8aaab8; line-height: 1.6; text-align: center; max-width: 600px; margin: 0 auto; min-height: 40px; }
-#ui { position: fixed; top: 1.2rem; right: 1.4rem; z-index: 20; display: flex; align-items: center; gap: 10px; }
-#play-btn { background: rgba(255,255,255,0.07); border: 0.5px solid rgba(255,255,255,0.18); color: #ccc; border-radius: 5px; padding: 6px 16px; font-size: 12px; cursor: pointer; letter-spacing: 0.04em; }
-#play-btn:hover { background: rgba(255,255,255,0.13); color: #fff; }
-#prog-wrap { width: 140px; height: 2px; background: #1e1e1e; border-radius: 2px; overflow: hidden; }
-#prog-bar { height: 100%; background: #4a7a96; width: 0%; }
-#scene-num { font-size: 11px; color: #3a4f5a; min-width: 36px; }
-#brand { position: fixed; top: 1.2rem; left: 1.4rem; z-index: 20; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #2e4450; }
-#vol-wrap { position: fixed; bottom: 1.2rem; right: 1.4rem; z-index: 20; display: flex; align-items: center; gap: 6px; opacity: 0.35; }
-#vol-wrap:hover { opacity: 1; }
-#vol-wrap label { font-size: 10px; color: #4a6070; letter-spacing: 0.1em; text-transform: uppercase; }
-#vol { width: 60px; accent-color: #4a7a96; }
-#model-label { position: fixed; top: 1.2rem; left: 50%; transform: translateX(-50%); z-index: 20; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #3a5a6a; opacity: 0; transition: opacity 0.8s ease; pointer-events: none; }
 
-/* Click-to-detail zone panel */
-#zone-detail { position: fixed; top: 50%; right: 1.4rem; transform: translateY(-50%); z-index: 25; width: 280px; background: rgba(8,12,16,0.92); border: 0.5px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 1.1rem 1.2rem; opacity: 0; pointer-events: none; transition: opacity 0.35s ease, transform 0.35s ease; }
-#zone-detail.show { opacity: 1; pointer-events: auto; transform: translateY(-50%) translateX(0); }
-#zone-detail-eyebrow { font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: #4a7a96; margin-bottom: 0.5rem; }
-#zone-detail-title { font-size: 15px; color: #eef2f4; font-weight: 500; margin-bottom: 0.7rem; }
-#zone-detail-body { font-size: 11.5px; line-height: 1.6; color: #8aaab8; margin-bottom: 0.9rem; }
-.zone-detail-spec { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-top: 0.5px solid rgba(255,255,255,0.07); font-size: 10.5px; }
-.zone-detail-spec-label { color: #4a6070; }
+/* ---- CONTENT PANEL ---- */
+#content-wrap {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 820px;
+  width: 90vw;
+  padding: 2.5rem 3rem;
+  transition: all 0.6s ease;
+}
+#content-wrap.overlay-mode {
+  position: fixed;
+  bottom: 110px;
+  top: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(5,10,24,0.82);
+  border: 0.5px solid var(--card-bdr);
+  border-radius: 10px;
+  padding: 1.6rem 2.2rem;
+  max-width: 620px;
+  width: 90vw;
+  backdrop-filter: blur(6px);
+}
+
+/* ---- TYPOGRAPHY ---- */
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 1rem;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.accent-line {
+  width: 32px;
+  height: 1.5px;
+  background: var(--cyan);
+  margin: 0 auto 1.1rem;
+  opacity: 0;
+  transition: opacity 0.6s ease 0.08s;
+}
+.headline {
+  font-size: clamp(30px, 5.5vw, 58px);
+  font-weight: 300;
+  line-height: 1.15;
+  color: var(--white);
+  margin-bottom: 1.2rem;
+  opacity: 0;
+  transition: opacity 0.6s ease 0.16s;
+  letter-spacing: -0.03em;
+}
+.headline strong {
+  font-weight: 600;
+  color: var(--cyan);
+}
+.body-text {
+  font-size: clamp(15px, 1.8vw, 18px);
+  line-height: 1.75;
+  color: var(--steel);
+  opacity: 0;
+  transition: opacity 0.6s ease 0.28s;
+  max-width: 580px;
+  margin: 0 auto;
+}
+
+/* ---- COST CALLOUT (scene 2b) ---- */
+.cost-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 0.65rem 0.9rem;
+  margin: 6px 0;
+  background: var(--card-bg);
+  border: 0.5px solid var(--card-bdr);
+  border-radius: 6px;
+  text-align: left;
+  opacity: 0;
+  transition: opacity 0.55s ease;
+}
+.cost-row-icon {
+  font-size: 18px;
+  line-height: 1.3;
+  flex-shrink: 0;
+}
+.cost-row-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 2px;
+}
+.cost-row-text {
+  font-size: 12px;
+  color: var(--steel);
+  line-height: 1.5;
+}
+.cost-rows-wrap { margin-top: 1.1rem; }
+
+/* ---- ZONE LIST (scene 4) ---- */
+.zones-wrap { margin-top: 1rem; width: 100%; text-align: left; }
+.dps-zone {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-left: 2px solid var(--cyan);
+  padding: 0.5rem 0.85rem;
+  margin: 5px 0;
+  background: var(--card-bg);
+  border-radius: 0 5px 5px 0;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.5s ease, background 0.2s ease;
+}
+.dps-zone:hover { background: rgba(0,200,255,0.07); }
+.dps-zone-name { font-size: 11px; font-weight: 600; color: var(--cyan); margin-bottom: 2px; letter-spacing: 0.06em; }
+.dps-zone-text { font-size: 11px; color: var(--steel); line-height: 1.45; }
+
+/* ---- SPEC GRID (scene 6) ---- */
+.spec-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 1.1rem;
+  text-align: left;
+  opacity: 0;
+  transition: opacity 0.6s ease 0.28s;
+}
+.spec-card {
+  background: var(--card-bg);
+  border: 0.5px solid var(--card-bdr);
+  border-radius: 6px;
+  padding: 0.55rem 0.8rem;
+}
+.spec-label { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); margin-bottom: 3px; }
+.spec-val { font-size: 12.5px; color: #b8ccd6; font-weight: 500; }
+
+/* ---- PATENT BADGE ---- */
+.patent-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 1rem;
+  padding: 5px 12px;
+  border: 0.5px solid rgba(200,255,0,0.3);
+  border-radius: 4px;
+  background: rgba(200,255,0,0.06);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--chart);
+  opacity: 0;
+  transition: opacity 0.6s ease 0.4s;
+}
+
+/* ---- SHOW CLASS ---- */
+.show { opacity: 1 !important; }
+
+/* ---- CAPTION BAR ---- */
+#caption-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  padding: 2.5rem 2rem 1rem;
+  background: linear-gradient(transparent, rgba(5,10,24,0.88));
+  pointer-events: none;
+  z-index: 10;
+}
+#caption-text {
+  font-size: 12.5px;
+  color: var(--dim);
+  line-height: 1.6;
+  text-align: center;
+  max-width: 580px;
+  margin: 0 auto;
+  min-height: 36px;
+  transition: opacity 0.4s ease;
+}
+
+/* ---- TOP BAR ---- */
+#brand {
+  position: fixed;
+  top: 1.2rem; left: 1.5rem;
+  z-index: 20;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dimmer);
+}
+#model-label {
+  position: fixed;
+  top: 1.2rem; left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ---- NAV UI ---- */
+#ui {
+  position: fixed;
+  top: 1.1rem; right: 1.4rem;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ui-btn {
+  background: rgba(255,255,255,0.06);
+  border: 0.5px solid rgba(255,255,255,0.15);
+  color: #aaa;
+  border-radius: 5px;
+  padding: 5px 14px;
+  font-size: 11.5px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: background 0.2s, color 0.2s;
+}
+.ui-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.ui-btn.primary {
+  border-color: rgba(0,200,255,0.35);
+  color: var(--cyan);
+}
+.ui-btn.primary:hover { background: rgba(0,200,255,0.1); }
+#prog-wrap { width: 120px; height: 1.5px; background: var(--dimmer); border-radius: 2px; overflow: hidden; }
+#prog-bar { height: 100%; background: var(--cyan); width: 0%; transition: width 0.3s linear; }
+#scene-num { font-size: 10px; color: var(--dim); min-width: 36px; }
+
+/* ---- NAV BUTTONS (prev / next) ---- */
+#nav-prev, #nav-next {
+  position: fixed;
+  bottom: 68px;
+  z-index: 20;
+  background: rgba(0,200,255,0.13);
+  border: 1px solid rgba(0,200,255,0.55);
+  color: var(--cyan);
+  border-radius: 7px;
+  padding: 10px 32px;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.3s ease, border-color 0.2s ease;
+}
+#nav-prev { left: 50%; transform: translateX(calc(-50% - 90px)); }
+#nav-next { left: 50%; transform: translateX(calc(-50% + 90px)); }
+#nav-prev:hover, #nav-next:hover { background: rgba(0,200,255,0.26); border-color: rgba(0,200,255,0.85); }
+#nav-prev.hidden { opacity: 0; pointer-events: none; }
+
+/* ---- ZONE CLICK HINT ---- */
+#zone-hint {
+  position: fixed;
+  bottom: 110px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--dim);
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  pointer-events: none;
+  text-align: center;
+  white-space: nowrap;
+}
+#zone-hint.show { opacity: 0.8; }
+
+/* ---- ZONE DETAIL PANEL ---- */
+#zone-detail {
+  position: fixed;
+  top: 50%; right: 1.4rem;
+  transform: translateY(-50%) translateX(20px);
+  z-index: 25;
+  width: 270px;
+  background: rgba(5,10,24,0.94);
+  border: 0.5px solid rgba(0,200,255,0.2);
+  border-radius: 8px;
+  padding: 1.1rem 1.2rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  backdrop-filter: blur(8px);
+}
+#zone-detail.show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-50%) translateX(0);
+}
+#zone-detail-eyebrow { font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--cyan); margin-bottom: 0.5rem; }
+#zone-detail-title { font-size: 14px; color: var(--white); font-weight: 500; margin-bottom: 0.65rem; }
+#zone-detail-body { font-size: 11px; line-height: 1.62; color: var(--steel); margin-bottom: 0.85rem; }
+.zone-detail-spec { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-top: 0.5px solid rgba(255,255,255,0.06); font-size: 10.5px; }
+.zone-detail-spec-label { color: var(--dim); }
 .zone-detail-spec-val { color: #a8bec8; text-align: right; }
-#zone-detail-close { position: absolute; top: 0.7rem; right: 0.8rem; background: none; border: none; color: #4a6070; font-size: 16px; cursor: pointer; line-height: 1; padding: 4px; }
-#zone-detail-close:hover { color: #8aaab8; }
-#zone-hint { position: fixed; bottom: 1.2rem; left: 50%; transform: translateX(-50%); z-index: 20; font-size: 10px; letter-spacing: 0.08em; color: #3a5a6a; opacity: 0; transition: opacity 0.8s ease; pointer-events: none; text-align: center; }
-#zone-hint.show { opacity: 0.7; }
+#zone-detail-close {
+  position: absolute; top: 0.65rem; right: 0.75rem;
+  background: none; border: none; color: var(--dim);
+  font-size: 16px; cursor: pointer; line-height: 1; padding: 4px;
+}
+#zone-detail-close:hover { color: var(--steel); }
+
+/* ---- VOL ---- */
+#vol-wrap {
+  position: fixed;
+  bottom: 1.1rem; right: 1.4rem;
+  z-index: 20;
+  display: flex; align-items: center; gap: 6px;
+  opacity: 0.3;
+  transition: opacity 0.2s;
+}
+#vol-wrap:hover { opacity: 1; }
+#vol-wrap label { font-size: 9px; color: var(--dim); letter-spacing: 0.1em; text-transform: uppercase; }
+#vol { width: 55px; accent-color: var(--cyan); }
 </style>
 </head>
 <body>
+
 <div id="brand">Grush Cottages</div>
-<div id="model-label" id="model-lbl"></div>
+<div id="model-label"></div>
+
 <div id="stage">
   <div id="three-canvas"></div>
-  <div id="content-wrap" id="content"></div>
+  <div id="content-wrap"></div>
   <div id="caption-bar"><div id="caption-text"></div></div>
 </div>
+
 <div id="zone-detail">
   <button id="zone-detail-close" onclick="closeZoneDetail()">&times;</button>
   <div id="zone-detail-eyebrow"></div>
@@ -70,12 +392,17 @@ html, body { height: 100%; background: #0a0a0a; color: #fff; font-family: 'Helve
   <div id="zone-detail-body"></div>
   <div id="zone-detail-specs"></div>
 </div>
+
+<div id="nav-prev" class="hidden" onclick="prevScene()">&#8592; Back</div>
+<div id="nav-next" onclick="nextScene()">Next &#8594;</div>
+
 <div id="zone-hint">Click a zone on the model for full specifications</div>
+
 <div id="ui">
-  <button id="play-btn" onclick="togglePlay()">Play</button>
   <div id="prog-wrap"><div id="prog-bar"></div></div>
   <div id="scene-num">1 / 8</div>
 </div>
+
 <div id="vol-wrap">
   <label for="vol">Vol</label>
   <input type="range" id="vol" min="0" max="1" step="0.05" value="0.5" oninput="setVolume(this.value)">
@@ -83,23 +410,25 @@ html, body { height: 100%; background: #0a0a0a; color: #fff; font-family: 'Helve
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-// ---- ZONE DETAIL DATA (v013-accurate, shown on click) ----
+// ============================================================
+// ZONE DETAIL DATA (v013-accurate)
+// ============================================================
 var zoneDetails = {
   electrical: {
-    eyebrow: 'Zone 1 -- Electrical',
+    eyebrow: 'Zone 1 — Electrical',
     title: 'Power, docked and standalone',
-    body: 'Docked supply arrives at 480V three-phase through the dock connector, stepping down to 120/240V for local branch circuits. A mechanical disconnect and gate-plate interlock keep the contacts physically inaccessible until power is off. When undocked, an automatic transfer switch hands off to a local generator -- the two sources are never connected to the panel at the same time.',
+    body: 'Docked supply arrives at 480V three-phase through the dock connector, stepping down to 120/240V for local branch circuits. A mechanical disconnect and gate-plate interlock keep contacts physically inaccessible until power is off. When undocked, an automatic transfer switch hands off to a local generator — the two sources are never connected at the same time.',
     specs: [
       { label: 'Docked supply', val: '480V 3-phase, 100A' },
       { label: 'Local distribution', val: '120/240V via step-down transformer' },
-      { label: 'Standalone source', val: 'Generator, via ATS' },
+      { label: 'Standalone source', val: 'Generator via ATS' },
       { label: 'Safety', val: 'Mechanical disconnect + gate interlock' }
     ]
   },
   data: {
-    eyebrow: 'Zone 2 -- Data',
+    eyebrow: 'Zone 2 — Data',
     title: 'All-fiber, no copper crossing',
-    body: 'The docked connection is entirely fiber optic -- a blind-mate multi-fiber cassette with dual redundant paths over a single-mode backbone. No copper conductor crosses the interface, which removes ground-loop and lightning-surge risk between two separately-grounded structures. A local switch provides standard wired ports inside each unit.',
+    body: 'The docked connection is entirely fiber optic — a blind-mate multi-fiber cassette with dual redundant paths over a single-mode backbone. No copper conductor crosses the interface, removing ground-loop and lightning-surge risk between two separately-grounded structures.',
     specs: [
       { label: 'Docked connection', val: 'Blind-mate fiber cassette (MPO/MTP)' },
       { label: 'Backbone', val: 'Single-mode, dual redundant' },
@@ -108,44 +437,44 @@ var zoneDetails = {
     ]
   },
   ventilation: {
-    eyebrow: 'Zone 3 -- Ventilation',
+    eyebrow: 'Zone 3 — Ventilation',
     title: 'Conditioned air, zero-power sealing',
-    body: 'Supply and return ducts carry conditioned air between docked units. Each port has a mechanical auto-sealing damper, driven directly off the same linkage that engages the structural lock -- it opens and closes with docking, with no motor and no power draw. A local fan and heat pump take over automatically when a unit is running standalone.',
+    body: 'Supply and return ducts carry conditioned air between docked units. Each port has a mechanical auto-sealing damper driven directly off the same linkage that engages the structural lock — opens and closes with docking, no motor, no power draw.',
     specs: [
       { label: 'Duct size', val: '12in (305mm), supply and return' },
       { label: 'Damper action', val: 'Mechanical, cam-linked to dock engagement' },
       { label: 'Standalone source', val: 'Local fan + heat pump' },
-      { label: 'Power draw to seal/unseal', val: 'None' }
+      { label: 'Power to seal/unseal', val: 'None' }
     ]
   },
   plumbing: {
-    eyebrow: 'Zone 4 -- Plumbing',
+    eyebrow: 'Zone 4 — Plumbing',
     title: 'Potable water, protected',
-    body: 'The docked connection carries potable water only -- waste is handled independently per unit, outside the docking system entirely. A dry-break quick-disconnect fitting prevents drips on connect or disconnect, and a backflow preventer protects against cross-contamination between two structures\' water systems. Standalone units draw from a local tank, refillable by tanker.',
+    body: 'The docked connection carries potable water only — waste is handled independently per unit, outside the docking system entirely. A dry-break quick-disconnect fitting prevents drips on connect or disconnect, and a backflow preventer protects against cross-contamination.',
     specs: [
-      { label: 'Scope', val: 'Potable water only -- no waste' },
+      { label: 'Scope', val: 'Potable water only — no waste' },
       { label: 'Connector', val: 'Dry-break quick-disconnect' },
       { label: 'Protection', val: 'Reduced-pressure-zone backflow preventer' },
       { label: 'Standalone source', val: 'Water tank / cistern, tanker-refillable' }
     ]
   },
   lock: {
-    eyebrow: 'Structural lock',
+    eyebrow: 'Structural Lock',
     title: 'Zero-power mechanical engagement',
-    body: 'Two diagonally-opposed alignment pins guide and lock the units together -- spring-loaded, automatic on insertion, with a deliberate manual action required to release. No hydraulics, no battery, nothing that can fail to a powered-down state. It works exactly the same with the power off as with the power on.',
+    body: 'Two diagonally-opposed alignment pins guide and lock the units together — spring-loaded, automatic on insertion, with a deliberate manual action required to release. No hydraulics, no battery, nothing that can fail to a powered-down state.',
     specs: [
       { label: 'Pin diameter', val: '50mm' },
       { label: 'Pin protrusion', val: '120mm' },
-      { label: 'Lead-in chamfer', val: '15 degrees' },
+      { label: 'Lead-in chamfer', val: '15°' },
       { label: 'Pocket depth', val: '125mm' }
     ]
   },
   structure: {
-    eyebrow: 'Bulkhead structure',
+    eyebrow: 'Bulkhead Structure',
     title: 'Retrofits into the factory door frame',
-    body: 'The bulkhead installs directly into the container\'s existing door-frame opening, in place of the standard swinging doors -- reusing the factory hinge ears and locking cam retainers. No new opening is cut into the container. A 28-inch walk-through passageway is built into every bulkhead and opens automatically as two units dock.',
+    body: 'The bulkhead installs directly into the container\'s existing door-frame opening, in place of the standard swinging doors — reusing the factory hinge ears and locking cam retainers. No new opening is cut. A 28-inch walk-through passageway opens automatically as two units dock.',
     specs: [
-      { label: 'Door opening', val: '2,340 x 2,597 mm (40HC standard)' },
+      { label: 'Door opening', val: '2,340 × 2,597 mm (40HC standard)' },
       { label: 'Mounting', val: 'Reuses factory hinge + cam hardware' },
       { label: 'Passageway', val: '28in clear width, opens on dock' },
       { label: 'Material', val: '12-gauge steel bulkhead' }
@@ -159,11 +488,11 @@ function showZoneDetail(zoneKey) {
   document.getElementById('zone-detail-eyebrow').textContent = d.eyebrow;
   document.getElementById('zone-detail-title').textContent = d.title;
   document.getElementById('zone-detail-body').textContent = d.body;
-  var specsHtml = '';
-  for (var i = 0; i < d.specs.length; i++) {
-    specsHtml += '<div class="zone-detail-spec"><span class="zone-detail-spec-label">' + d.specs[i].label + '</span><span class="zone-detail-spec-val">' + d.specs[i].val + '</span></div>';
-  }
-  document.getElementById('zone-detail-specs').innerHTML = specsHtml;
+  var html = '';
+  d.specs.forEach(function(s) {
+    html += '<div class="zone-detail-spec"><span class="zone-detail-spec-label">' + s.label + '</span><span class="zone-detail-spec-val">' + s.val + '</span></div>';
+  });
+  document.getElementById('zone-detail-specs').innerHTML = html;
   document.getElementById('zone-detail').classList.add('show');
 }
 
@@ -171,783 +500,710 @@ function closeZoneDetail() {
   document.getElementById('zone-detail').classList.remove('show');
 }
 
-// ---- SCENE DATA (v013-accurate) ----
-// NOTE on timing: each scene's "duration" field below is NOT used to control pacing --
-// it's a legacy value, currently dead code. Real scene advancement happens in goToScene(),
-// which waits for the actual narration MP3 to finish playing (the audio 'ended' event),
-// then moves to the next scene after a 500ms pause. This means narration and on-screen
-// timing are always in sync by construction, regardless of how long any given clip runs.
+// ============================================================
+// SCENE DATA
+// ============================================================
 var scenes = [
+  // 0 — Hook
   {
-    bg: '#0a0f14', eyebrow: 'Grush Cottages',
+    id: 'hook',
+    bg: '#050a18',
+    eyebrow: 'Grush Cottages',
     headline: 'People go places\nand do things.',
-    body: 'The logistics has always been a hassle. Cottages is the all-in-one solution -- fully equipped, self-contained, and ready to deploy wherever the work is.',
+    body: 'The logistics has always been the hard part. Cottages are fully equipped, self-contained shipping container units — ready to deploy wherever the work is.',
     accent: true,
-    caption: 'Stress the job, not the solution.',
-    duration: 9000, drone: 55,
+    caption: 'Stress the job, not the setup.',
+    autoAdvance: true, advanceDelay: 9000,
     model: false
   },
+  // 1 — The problem: improvised utilities
   {
-    bg: '#0a100c', eyebrow: 'The concept',
-    headline: 'One docking system.\nUse it your way.',
-    body: 'Our docking system bolts onto a container you already own -- or comes built into one of our Cottages. Need to grow food? GrowCottage. Need to feed people fast? KitchenCottage. Need to build something? ShopCottage. One port. Any job.',
+    id: 'problem',
+    bg: '#060a10',
+    eyebrow: 'The problem',
+    headline: 'Containers are already everywhere.\nThe missing piece is how they connect.',
+    body: 'Every job site, remote deployment, and temporary campus runs on improvised utilities — separate cable runs, separate pipe runs, separate trade callouts for every unit added.',
     accent: true,
-    caption: 'Unburdened by what has been. Built for what needs to get done.',
-    duration: 10000, drone: 52,
-    model: false
+    caption: 'Standardizing the connection changes everything downstream.',
+    autoAdvance: true, advanceDelay: 10000,
+    model: 'chaos', modelBg: true
   },
+  // 2 — Cost problem
   {
-    bg: '#060608', eyebrow: 'The platform',
-    headline: 'A standard shipping container,\ntailored to the customer,\nready to relocate.',
-    body: 'Available in a variety of configurations, colors, and weatherization options. Grid-connected or fully off-grid. Dedicated hookups for generators and water. Delivered ready to work.',
+    id: 'cost',
+    bg: '#060a10',
+    eyebrow: 'The cost of scale',
+    headline: 'Every unit you add\ncurrently costs more than the last.',
+    costRows: [
+      { icon: '⚡', label: 'Electrical', text: 'Licensed electrician required for every new unit. Separate conduit run, separate panel tap, separate inspection.' },
+      { icon: '💧', label: 'Plumbing', text: 'Separate pipe run and backflow device per unit. Plumber on-site each time you expand.' },
+      { icon: '💨', label: 'HVAC', text: 'Each unit needs its own ductwork stub-out and balancing. Separate HVAC tech, separate schedule.' },
+      { icon: '📡', label: 'Data', text: 'Individual cable pulls per unit. No standard interface means no standard install.' }
+    ],
+    caption: 'Coordination cost compounds. The GC-DPS eliminates it.',
+    autoAdvance: true, advanceDelay: 13000,
+    model: 'chaos', modelBg: true
+  },
+  // 3 — GC-DPS reveal
+  {
+    id: 'reveal',
+    bg: '#060608',
+    eyebrow: 'GC-DPS — Patent Pending',
+    headline: 'One port.\nEvery system.',
+    body: 'A standardized steel bulkhead that retrofits directly into the container\'s existing door frame. Routes power, data, air, and water through a single interface. When a new unit docks into the chain, it inherits the full utility network — no trades, no separate runs, no coordination overhead.',
     accent: true,
-    caption: 'Already equipped to do what needs to be done -- wherever that happens to be.',
-    duration: 11000, drone: 55,
-    model: false
+    patentBadge: 'Provisional Patent #64/093,343 — Filed June 18, 2026',
+    caption: 'Two units. One port. Power, data, air, water, and personnel passage — all handled at the interface.',
+    autoAdvance: false,
+    model: 'dps', modelMode: 'docking', modelBg: false, clickable: true,
+    modelLabel: 'GC-DPS — docking animation'
   },
+  // 4 — Four zones
   {
-    bg: '#060608', eyebrow: 'GC-DPS -- Grush Cottages Docking Port System',
-    headline: 'What makes them\nconnectable.',
-    body: 'Patent pending. A standardized steel bulkhead that retrofits directly into the container\'s existing door frame, replacing the factory doors and routing all four utility systems plus a walk-through passageway.',
-    accent: true,
-    caption: 'Two units. One port. Power, data, air, water, and personnel passage -- all handled at the interface.',
-    duration: 11000, drone: 58,
-    model: true, modelMode: 'docked', modelZone: null, modelLabel: 'GC-DPS -- docked view', clickable: true
-  },
-  {
-    bg: '#060608', eyebrow: 'Four utility zones',
+    id: 'zones',
+    bg: '#060608',
+    eyebrow: 'Four utility zones',
     headline: 'One port carries\nevery system.',
     zones: [
-      { key: 'electrical', name: 'Zone 1 -- Electrical', text: '480V three-phase docked, stepped to 120/240V locally. Automatic transfer to generator when standalone.' },
-      { key: 'data', name: 'Zone 2 -- Data', text: 'All-fiber connection. No copper crosses the interface -- no ground-loop or surge risk between units.' },
-      { key: 'ventilation', name: 'Zone 3 -- Ventilation', text: 'Supply and return ducts with mechanical auto-sealing dampers. No power required to open or close.' },
-      { key: 'plumbing', name: 'Zone 4 -- Plumbing', text: 'Potable water only, dry-break connector with backflow protection. Waste handled independently per unit.' }
+      { key: 'electrical', name: 'Zone 1 — Electrical', text: '480V three-phase docked, stepped to 120/240V locally. Automatic transfer to generator when standalone.' },
+      { key: 'data',       name: 'Zone 2 — Data',       text: 'All-fiber connection. No copper crosses the interface — no ground-loop or surge risk between units.' },
+      { key: 'ventilation',name: 'Zone 3 — Ventilation',text: 'Supply and return ducts with mechanical auto-sealing dampers. No power required to open or close.' },
+      { key: 'plumbing',   name: 'Zone 4 — Plumbing',  text: 'Potable water only, dry-break connector with backflow protection. Waste handled independently per unit.' }
     ],
     caption: 'Each zone is independently sealed and serviceable. Click a zone on the model for full specifications.',
-    duration: 13000, drone: 62,
-    model: true, modelMode: 'separated', modelZone: null, modelLabel: 'GC-DPS -- separated view', clickable: true
+    autoAdvance: false,
+    model: 'dps', modelMode: 'separated', modelBg: false, clickable: true,
+    modelLabel: 'GC-DPS — click a zone'
   },
+  // 5 — Linear chain / scale
   {
-    bg: '#060608', eyebrow: 'Technical specification',
+    id: 'scale',
+    bg: '#0a0d14',
+    eyebrow: 'Linear chain deployment',
+    headline: 'The cost of adding\none unit is the same\nas adding twenty.',
+    body: 'A single Cottage operates fully standalone. Dock a Utility-Supply Cottage inline and it shares every utility along the chain. Each additional Cottage connects to the previous one using the same port, the same spec, the same single action. No new trade callouts. No compounding coordination cost.',
+    accent: true,
+    caption: 'Growth is additive and predictable. Every new unit docks in and inherits the full network.',
+    autoAdvance: true, advanceDelay: 12000,
+    model: false
+  },
+  // 6 — Technical spec
+  {
+    id: 'spec',
+    bg: '#060608',
+    eyebrow: 'Technical specification',
     headline: 'Fabrication-ready.\nCAD-documented.\nProvisional patent filed.',
     specs: [
+      { label: 'Patent application', val: '#64/093,343' },
+      { label: 'Filing date', val: 'June 18, 2026' },
       { label: 'Mounting', val: 'Retrofits 40HC factory door frame' },
       { label: 'Bulkhead material', val: '12 ga. steel plate' },
       { label: 'Frame hardware', val: 'Reuses factory hinge + cam retainers' },
       { label: 'Passageway clear width', val: '28in (711mm)' },
-      { label: 'Seal type', val: 'EPDM compression gasket' },
       { label: 'Locking system', val: 'Zero-power mechanical pin lock' },
-      { label: 'Fire rating', val: 'NFPA 285 compliant path' },
       { label: 'Weather resistance', val: 'IP54 assembled' }
     ],
-    caption: 'Provisional patent filed June 2026. Click any zone on the model for exact dimensions and component detail.',
-    duration: 12000, drone: 49,
-    model: true, modelMode: 'docked', modelZone: null, modelLabel: 'GC-DPS -- click a zone', clickable: true
+    caption: 'Click any zone on the model for exact dimensions and component detail.',
+    autoAdvance: false,
+    model: 'dps', modelMode: 'docked', modelBg: false, clickable: true,
+    modelLabel: 'GC-DPS — click a zone'
   },
+  // 7 — CTA
   {
-    bg: '#0a0d14', eyebrow: 'Scale',
-    headline: 'One unit, or a connected chain.\nSame port. Same spec.',
-    body: 'A single Cottage handles the job standalone. A Cottage docks directly to a Utility-Supply Cottage and shares every utility. A second Cottage can join the same hub, or bridge in through an adapter -- the GC-DPS does not change at any scale.',
-    accent: true,
-    caption: 'Growth is additive. Every new unit plugs into the same interface and inherits the full utility network.',
-    duration: 12000, drone: 55,
-    model: false
-  },
-  {
-    bg: '#0a0a10', eyebrow: 'Grush Cottages',
+    id: 'cta',
+    bg: '#050a18',
+    eyebrow: 'Grush Cottages',
     headline: 'The spec exists.\nThe patent is filed.\nReady for a build partner.',
     body: 'Seeking pilot deployment sites, licensed fabricators, and investors. The GC-DPS is ready for prototype construction.',
     accent: true,
-    caption: 'Contact: chad@getgrush.com -- getgrush.com',
-    duration: 12000, drone: 52,
+    caption: 'chad@getgrush.com  ·  getgrush.com',
+    autoAdvance: false,
     model: false
   }
 ];
 
-// ---- DOM REFS ----
-var stageEl = document.getElementById('stage');
-var contentEl = document.getElementById('content-wrap');
-var captionEl = document.getElementById('caption-text');
-var playBtn = document.getElementById('play-btn');
-var progBar = document.getElementById('prog-bar');
-var sceneNum = document.getElementById('scene-num');
-var threeWrap = document.getElementById('three-canvas');
-var modelLbl = document.getElementById('model-label');
-var zoneHintEl = document.getElementById('zone-hint');
+// ============================================================
+// DOM REFS
+// ============================================================
+var stageEl      = document.getElementById('stage');
+var contentEl    = document.getElementById('content-wrap');
+var captionEl    = document.getElementById('caption-text');
+var progBar      = document.getElementById('prog-bar');
+var sceneNumEl   = document.getElementById('scene-num');
+var threeWrap    = document.getElementById('three-canvas');
+var modelLblEl   = document.getElementById('model-label');
+var zoneHintEl   = document.getElementById('zone-hint');
 
-// ---- PLAYBACK STATE ----
-var current = 0, playing = false, sceneTimer = null, progInterval = null, sceneStart = 0;
+// ============================================================
+// PLAYBACK STATE
+// ============================================================
+var current = 0;
 
-// ---- AUDIO ----
-var ctx = null, masterGain = null, droneOsc = null, droneGain = null, droneOsc2 = null, droneGain2 = null, lfoOsc = null;
+// ============================================================
+// AUDIO
+// ============================================================
+var ctx = null, masterGain = null;
+var droneOsc = null, droneGain = null, droneOsc2 = null, droneGain2 = null, lfoOsc = null;
 var masterVol = 0.5;
-
-// ---- NARRATION MP3 FILES (one per scene, same folder as index.html) ----
-// NOTE: scene 2's narration script changed -- "imagineascenario.mp3" must be re-recorded
-// to match the new body text before this will sound correct. Filename kept the same
-// so only the audio content needs replacing, not this array.
-var narrationFiles = [
-  'Peoplegoplaces.mp3',
-  'imagineascenario.mp3',
-  'astandardshippingcontainer.mp3',
-  'whatmakesthemconnectable.mp3',
-  'oneportcarries.mp3',
-  'fabricationready.mp3',
-  'oneunitortwenty.mp3',
-  'thespecexists.mp3'
-];
-
-var narrationAudio = null;
-
-function speakScene(idx, onEnded) {
-  stopSpeech();
-  var file = narrationFiles[idx];
-  if (!file) { if (onEnded) setTimeout(onEnded, 500); return; }
-  narrationAudio = new Audio(file);
-  narrationAudio.volume = 1.0;
-  narrationAudio.addEventListener('timeupdate', function() {
-    if (narrationAudio && narrationAudio.duration) {
-      updateProg(narrationAudio.currentTime, narrationAudio.duration);
-    }
-  });
-  narrationAudio.addEventListener('ended', function() {
-    progBar.style.width = '100%';
-    if (onEnded) onEnded();
-  });
-  narrationAudio.addEventListener('error', function(e) {
-    console.warn('Audio error:', e);
-    if (onEnded) setTimeout(onEnded, 500);
-  });
-  narrationAudio.play().catch(function(e) {
-    console.warn('Audio play failed:', e);
-    if (onEnded) setTimeout(onEnded, 8000);
-  });
-}
-
-function stopSpeech() {
-  if (narrationAudio) {
-    narrationAudio.pause();
-    narrationAudio.currentTime = 0;
-    narrationAudio = null;
-  }
-}
 
 function initAudio() {
   if (ctx) return;
   ctx = new (window.AudioContext || window.webkitAudioContext)();
   masterGain = ctx.createGain();
-  masterGain.gain.setValueAtTime(masterVol * 0.12, ctx.currentTime);
+  masterGain.gain.setValueAtTime(masterVol * 0.20, ctx.currentTime);
   masterGain.connect(ctx.destination);
 
-  droneOsc = ctx.createOscillator();
-  droneOsc.type = 'sine';
-  droneOsc.frequency.setValueAtTime(55, ctx.currentTime);
-  droneGain = ctx.createGain();
-  droneGain.gain.setValueAtTime(0, ctx.currentTime);
-  droneOsc.connect(droneGain);
-  droneGain.connect(masterGain);
-  droneOsc.start();
+  droneOsc = ctx.createOscillator(); droneOsc.type = 'sine'; droneOsc.frequency.setValueAtTime(55, ctx.currentTime);
+  droneGain = ctx.createGain(); droneGain.gain.setValueAtTime(0, ctx.currentTime);
+  droneOsc.connect(droneGain); droneGain.connect(masterGain); droneOsc.start();
 
-  droneOsc2 = ctx.createOscillator();
-  droneOsc2.type = 'sine';
-  droneOsc2.frequency.setValueAtTime(110.05, ctx.currentTime);
-  droneGain2 = ctx.createGain();
-  droneGain2.gain.setValueAtTime(0, ctx.currentTime);
-  droneOsc2.connect(droneGain2);
-  droneGain2.connect(masterGain);
-  droneOsc2.start();
+  droneOsc2 = ctx.createOscillator(); droneOsc2.type = 'sine'; droneOsc2.frequency.setValueAtTime(110.05, ctx.currentTime);
+  droneGain2 = ctx.createGain(); droneGain2.gain.setValueAtTime(0, ctx.currentTime);
+  droneOsc2.connect(droneGain2); droneGain2.connect(masterGain); droneOsc2.start();
 
-  lfoOsc = ctx.createOscillator();
-  lfoOsc.type = 'sine';
-  lfoOsc.frequency.setValueAtTime(0.08, ctx.currentTime);
-  var lfoGain = ctx.createGain();
-  lfoGain.gain.setValueAtTime(3, ctx.currentTime);
-  lfoOsc.connect(lfoGain);
-  lfoGain.connect(droneOsc.frequency);
-  lfoOsc.start();
+  lfoOsc = ctx.createOscillator(); lfoOsc.type = 'sine'; lfoOsc.frequency.setValueAtTime(0.08, ctx.currentTime);
+  var lfoG = ctx.createGain(); lfoG.gain.setValueAtTime(3, ctx.currentTime);
+  lfoOsc.connect(lfoG); lfoG.connect(droneOsc.frequency); lfoOsc.start();
 }
 
 function fadeDroneTo(freq) {
   if (!ctx) return;
   var t = ctx.currentTime;
-  droneOsc.frequency.cancelScheduledValues(t);
-  droneOsc.frequency.setValueAtTime(droneOsc.frequency.value, t);
-  droneOsc.frequency.linearRampToValueAtTime(freq, t + 2.0);
-  droneOsc2.frequency.cancelScheduledValues(t);
-  droneOsc2.frequency.setValueAtTime(droneOsc2.frequency.value, t);
-  droneOsc2.frequency.linearRampToValueAtTime(freq * 2.005, t + 2.0);
-  droneGain.gain.cancelScheduledValues(t);
-  droneGain.gain.setValueAtTime(droneGain.gain.value, t);
-  droneGain.gain.linearRampToValueAtTime(0.45, t + 1.5);
-  droneGain2.gain.cancelScheduledValues(t);
-  droneGain2.gain.setValueAtTime(droneGain2.gain.value, t);
-  droneGain2.gain.linearRampToValueAtTime(0.22, t + 1.5);
+  droneOsc.frequency.cancelScheduledValues(t); droneOsc.frequency.setValueAtTime(droneOsc.frequency.value, t); droneOsc.frequency.linearRampToValueAtTime(freq, t+2);
+  droneOsc2.frequency.cancelScheduledValues(t); droneOsc2.frequency.setValueAtTime(droneOsc2.frequency.value, t); droneOsc2.frequency.linearRampToValueAtTime(freq*2.005, t+2);
+  droneGain.gain.cancelScheduledValues(t); droneGain.gain.setValueAtTime(droneGain.gain.value, t); droneGain.gain.linearRampToValueAtTime(0.4, t+1.5);
+  droneGain2.gain.cancelScheduledValues(t); droneGain2.gain.setValueAtTime(droneGain2.gain.value, t); droneGain2.gain.linearRampToValueAtTime(0.2, t+1.5);
 }
 
-function playTone(freq) {
-  if (!ctx) return;
-  var osc = ctx.createOscillator();
-  var g = ctx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(freq * 2, ctx.currentTime);
-  g.gain.setValueAtTime(0, ctx.currentTime);
-  g.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.06);
-  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.4);
-  osc.connect(g);
-  g.connect(masterGain);
-  osc.start();
-  osc.stop(ctx.currentTime + 1.5);
+// Haptic feedback — short crisp tap on mobile
+function haptic(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern || [18]);
 }
 
-// ---- SUBTLE NAVIGATION AUDIO ----
-// Soft, short sine ticks in the same family as the ambient drone --
-// quieter and shorter than playTone() so they read as UI feedback, not a musical cue.
-// navTick: used for interactive clicks (zone selection, play/pause)
-// navTransition: used for scene-to-scene advances -- slightly lower and softer than a click
-function navTick() {
-  if (!ctx) return;
-  var osc = ctx.createOscillator();
-  var g = ctx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(880, ctx.currentTime);
-  g.gain.setValueAtTime(0, ctx.currentTime);
-  g.gain.linearRampToValueAtTime(0.05, ctx.currentTime + 0.012);
-  g.gain.exponentialRampToValueAtTime(0.0008, ctx.currentTime + 0.18);
-  osc.connect(g);
-  g.connect(masterGain);
-  osc.start();
-  osc.stop(ctx.currentTime + 0.2);
-}
-
-function navTransition() {
-  if (!ctx) return;
-  var osc = ctx.createOscillator();
-  var g = ctx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(440, ctx.currentTime);
-  g.gain.setValueAtTime(0, ctx.currentTime);
-  g.gain.linearRampToValueAtTime(0.035, ctx.currentTime + 0.02);
-  g.gain.exponentialRampToValueAtTime(0.0006, ctx.currentTime + 0.35);
-  osc.connect(g);
-  g.connect(masterGain);
-  osc.start();
-  osc.stop(ctx.currentTime + 0.4);
-}
-
-function fadeOutAudio() {
+// connectorSnap — mechanical connector engaging: thud + click + noise burst, no tail
+function connectorSnap(loud) {
+  haptic(loud ? [22] : [14]);
   if (!ctx) return;
   var t = ctx.currentTime;
-  masterGain.gain.cancelScheduledValues(t);
-  masterGain.gain.setValueAtTime(masterGain.gain.value, t);
-  masterGain.gain.linearRampToValueAtTime(0, t + 2.5);
-  stopSpeech();
+  var vol = loud ? 1.0 : 0.7;
+
+  // 1. Impact thud — low sine, fast attack, very fast decay (the "body" of the snap)
+  var thud = ctx.createOscillator(); var thudG = ctx.createGain();
+  thud.type = 'sine';
+  thud.frequency.setValueAtTime(120, t);
+  thud.frequency.exponentialRampToValueAtTime(55, t + 0.03);
+  thudG.gain.setValueAtTime(0, t);
+  thudG.gain.linearRampToValueAtTime(1.4 * vol, t + 0.003);
+  thudG.gain.exponentialRampToValueAtTime(0.0008, t + 0.045);
+  thud.connect(thudG); thudG.connect(masterGain);
+  thud.start(t); thud.stop(t + 0.05);
+
+  // 2. Click transient — very short noise burst (the "snap" surface contact)
+  var bufSize = Math.floor(ctx.sampleRate * 0.018);
+  var buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+  var data = buf.getChannelData(0);
+  for (var i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1);
+  var noise = ctx.createBufferSource(); noise.buffer = buf;
+  // High-pass the noise so it reads as click, not rumble
+  var hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 3200; hp.Q.value = 0.8;
+  var noiseG = ctx.createGain();
+  noiseG.gain.setValueAtTime(1.1 * vol, t);
+  noiseG.gain.exponentialRampToValueAtTime(0.0008, t + 0.018);
+  noise.connect(hp); hp.connect(noiseG); noiseG.connect(masterGain);
+  noise.start(t); noise.stop(t + 0.02);
+
+  // 3. Metallic ring — short mid tone, gives it the "connector" character
+  var ring = ctx.createOscillator(); var ringG = ctx.createGain();
+  ring.type = 'square';
+  ring.frequency.setValueAtTime(680, t + 0.002);
+  ring.frequency.exponentialRampToValueAtTime(420, t + 0.025);
+  ringG.gain.setValueAtTime(0, t + 0.002);
+  ringG.gain.linearRampToValueAtTime(0.36 * vol, t + 0.005);
+  ringG.gain.exponentialRampToValueAtTime(0.0008, t + 0.038);
+  // Bandpass to keep it tight
+  var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 550; bp.Q.value = 1.2;
+  ring.connect(bp); bp.connect(ringG); ringG.connect(masterGain);
+  ring.start(t + 0.002); ring.stop(t + 0.04);
 }
+
+function navTick()   { connectorSnap(true);  }
+function zoneClick() { connectorSnap(false); }
 
 function setVolume(v) {
   masterVol = parseFloat(v);
-  if (masterGain) masterGain.gain.setValueAtTime(masterVol * 0.12, ctx.currentTime);
+  if (masterGain) masterGain.gain.setValueAtTime(masterVol*0.20, ctx.currentTime);
 }
 
-// ---- THREE.JS MODEL ----
-var threeReady = false;
+// ============================================================
+// THREE.JS — DPS MODEL (v013)
+// ============================================================
+var dpsReady = false;
 var threeScene, threeCamera, threeRenderer;
-var pinGroup, pocketGroup, assembly;
-var autoSpin = true, threeTheta = Math.PI * 0.22, threePhi = Math.PI * 0.38;
-var threeRadius = 4200;
-var threeTarget, flyTarget, flyRadius;
+var pinGroup, pocketGroup, dpsAssembly;
 var gapCurrent = 0, gapTarget = 0;
 var dampers = [], doorPivots = [];
 var zoneRegistry = {};
-var zoneCycleTimer = null, zoneCycleIndex = 0;
-var zoneNames = ['electrical', 'data', 'ventilation', 'plumbing'];
-var isolatedZone = null;
 var raycaster, mouseVec;
 var clickEnabled = false;
+var threeTheta = Math.PI*0.22, threePhi = Math.PI*0.38, threeRadius = 4200;
+var threeTarget, flyTarget, flyRadius;
+var dockingAnim = false, dockingDir = 0;
 
-var FRAME_W = 2200, FRAME_H = 2500, FRAME_D = 150;
-var PASSAGE_W = 711;
-var PIN_D = 50, PIN_PROTRUSION = 120, PIN_CHAMFER = 15;
-var POCKET_D = 51.5, POCKET_DEPTH = 125;
-var CONTAINER_L = 12192, CONTAINER_W = 2438, CONTAINER_H = 2896;
-var DOOR_OPEN_W = 2340, DOOR_OPEN_H = 2597;
-var WALL_VIS = 90, HEADER_H = 600;
-var CORNER_INSET_X = 300, CORNER_INSET_Y = 300;
-var DUCT_D = 305;
-var offX = FRAME_W/2 - CORNER_INSET_X;
-var offY = FRAME_H/2 - CORNER_INSET_Y;
-var CHAMFER_H = (PIN_D/2) / Math.tan(PIN_CHAMFER * Math.PI/180);
-var SEP_GAP = 500;
+// Chaos model (scene 1/2 background)
+var chaosReady = false;
+var chaosScene, chaosCamera, chaosRenderer;
+var chaosAssembly;
+var chaosTheta = 0;
 
-function initThree() {
-  if (threeReady) return;
-  threeReady = true;
+var FRAME_W=2200, FRAME_H=2500, FRAME_D=150;
+var PASSAGE_W=711;
+var PIN_D=50, PIN_PROTRUSION=120, PIN_CHAMFER=15;
+var POCKET_D=51.5, POCKET_DEPTH=125;
+var CONTAINER_L=12192, CONTAINER_W=2438, CONTAINER_H=2896;
+var DOOR_OPEN_W=2340, DOOR_OPEN_H=2597;
+var WALL_VIS=90, HEADER_H=600;
+var CORNER_INSET_X=300, CORNER_INSET_Y=300;
+var DUCT_D=305;
+var offX=FRAME_W/2-CORNER_INSET_X, offY=FRAME_H/2-CORNER_INSET_Y;
+var CHAMFER_H=(PIN_D/2)/Math.tan(PIN_CHAMFER*Math.PI/180);
+var SEP_GAP=500;
+
+function initDPS() {
+  if (dpsReady) return;
+  dpsReady = true;
 
   var M = {
-    steel:   new THREE.MeshStandardMaterial({color:0x6b7280, roughness:0.6, metalness:0.3}),
-    steelDk: new THREE.MeshStandardMaterial({color:0x9a9484, roughness:0.7, metalness:0.15}),
-    pin:     new THREE.MeshStandardMaterial({color:0x3a3f44, roughness:0.3, metalness:0.7}),
-    pocket:  new THREE.MeshStandardMaterial({color:0x2a2e32, roughness:0.5, metalness:0.4}),
-    door:    new THREE.MeshStandardMaterial({color:0xb8c4ce, roughness:0.5, metalness:0.2}),
-    elec:    new THREE.MeshStandardMaterial({color:0xf2a33c, roughness:0.5, metalness:0.2}),
-    data:    new THREE.MeshStandardMaterial({color:0x3dd6c7, roughness:0.4, metalness:0.2}),
-    vent:    new THREE.MeshStandardMaterial({color:0x7fb3d5, roughness:0.4, metalness:0.3}),
-    plumb:   new THREE.MeshStandardMaterial({color:0x4c7ebf, roughness:0.4, metalness:0.3}),
-    container: new THREE.MeshStandardMaterial({color:0x8a7560, roughness:0.8, metalness:0.1, transparent:true, opacity:0.12, side:THREE.DoubleSide})
+    steel:     new THREE.MeshStandardMaterial({color:0x6b7280,roughness:0.6,metalness:0.3}),
+    steelDk:   new THREE.MeshStandardMaterial({color:0x9a9484,roughness:0.7,metalness:0.15}),
+    pin:       new THREE.MeshStandardMaterial({color:0x3a3f44,roughness:0.3,metalness:0.7}),
+    pocket:    new THREE.MeshStandardMaterial({color:0x2a2e32,roughness:0.5,metalness:0.4}),
+    door:      new THREE.MeshStandardMaterial({color:0xb8c4ce,roughness:0.5,metalness:0.2}),
+    elec:      new THREE.MeshStandardMaterial({color:0xf2a33c,roughness:0.5,metalness:0.2}),
+    data:      new THREE.MeshStandardMaterial({color:0x3dd6c7,roughness:0.4,metalness:0.2}),
+    vent:      new THREE.MeshStandardMaterial({color:0x7fb3d5,roughness:0.4,metalness:0.3}),
+    plumb:     new THREE.MeshStandardMaterial({color:0x4c7ebf,roughness:0.4,metalness:0.3}),
+    container: new THREE.MeshStandardMaterial({color:0x8a7560,roughness:0.8,metalness:0.1,transparent:true,opacity:0.12,side:THREE.DoubleSide})
   };
 
-  zoneRegistry = {structure:[], lock:[], electrical:[], data:[], ventilation:[], plumbing:[], container:[]};
+  zoneRegistry = {structure:[],lock:[],electrical:[],data:[],ventilation:[],plumbing:[],container:[]};
 
-  function addEdges(mesh) {
-    var eg = new THREE.EdgesGeometry(mesh.geometry);
-    mesh.add(new THREE.LineSegments(eg, new THREE.LineBasicMaterial({color:0x1c1c1a, opacity:0.5, transparent:true})));
-    return mesh;
-  }
-  function mkbox(w,h,d,mat) {
-    var m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat.clone());
-    addEdges(m); return m;
-  }
-  function cyl(r,h,mat,segs) {
-    var m = new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,segs||24), mat.clone());
-    addEdges(m); return m;
-  }
+  function addEdges(m) { m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry), new THREE.LineBasicMaterial({color:0x1c1c1a,opacity:0.45,transparent:true}))); return m; }
+  function mkbox(w,h,d,mat) { var m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat.clone()); addEdges(m); return m; }
+  function cyl(r,h,mat,s) { var m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,s||24),mat.clone()); addEdges(m); return m; }
   function connectPts(p1,p2,mat,r) {
-    var dir = new THREE.Vector3().subVectors(p2,p1);
-    var len = dir.length();
-    var m = new THREE.Mesh(new THREE.CylinderGeometry(r,r,len,10), mat.clone());
-    addEdges(m);
+    var dir=new THREE.Vector3().subVectors(p2,p1), len=dir.length();
+    var m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,len,10),mat.clone()); addEdges(m);
     m.position.copy(p1).add(p2).multiplyScalar(0.5);
-    m.quaternion.copy(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), dir.normalize()));
+    m.quaternion.copy(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize()));
     return m;
   }
-  function tag(mesh, zone) {
-    mesh.userData.zone = zone;
-    mesh.userData.baseOpacity = mesh.material.opacity !== undefined ? mesh.material.opacity : 1;
-    zoneRegistry[zone].push(mesh);
-    return mesh;
-  }
+  function tag(m,z) { m.userData.zone=z; m.userData.baseOpacity=m.material.opacity!==undefined?m.material.opacity:1; zoneRegistry[z].push(m); return m; }
 
   function buildFrame(kind, zSign) {
     var g = new THREE.Group();
-    var bodyMat = (kind==='pin') ? M.steelDk : M.steel;
-    var bodyZCenter = zSign * FRAME_D/2;
+    var bm = kind==='pin' ? M.steelDk : M.steel;
+    var bz = zSign*FRAME_D/2;
+    function ap(m){g.add(m);return m;}
 
-    function addP(mesh) { g.add(mesh); return mesh; }
+    var top=mkbox(FRAME_W,WALL_VIS,FRAME_D,bm); top.position.set(0,FRAME_H/2-WALL_VIS/2,bz); tag(top,'structure'); ap(top);
+    var bot=mkbox(FRAME_W,WALL_VIS,FRAME_D,bm); bot.position.set(0,-FRAME_H/2+WALL_VIS/2,bz); tag(bot,'structure'); ap(bot);
+    var lft=mkbox(WALL_VIS,FRAME_H-2*WALL_VIS,FRAME_D,bm); lft.position.set(-FRAME_W/2+WALL_VIS/2,0,bz); tag(lft,'structure'); ap(lft);
+    var rgt=mkbox(WALL_VIS,FRAME_H-2*WALL_VIS,FRAME_D,bm); rgt.position.set(FRAME_W/2-WALL_VIS/2,0,bz); tag(rgt,'structure'); ap(rgt);
 
-    var top = mkbox(FRAME_W, WALL_VIS, FRAME_D, bodyMat);
-    top.position.set(0, FRAME_H/2 - WALL_VIS/2, bodyZCenter);
-    var bot = mkbox(FRAME_W, WALL_VIS, FRAME_D, bodyMat);
-    bot.position.set(0, -FRAME_H/2 + WALL_VIS/2, bodyZCenter);
-    var lft = mkbox(WALL_VIS, FRAME_H-2*WALL_VIS, FRAME_D, bodyMat);
-    lft.position.set(-FRAME_W/2+WALL_VIS/2, 0, bodyZCenter);
-    var rgt = mkbox(WALL_VIS, FRAME_H-2*WALL_VIS, FRAME_D, bodyMat);
-    rgt.position.set(FRAME_W/2-WALL_VIS/2, 0, bodyZCenter);
-    [top,bot,lft,rgt].forEach(function(m){ tag(m,'structure'); addP(m); });
+    var hY=FRAME_H/2-HEADER_H;
+    var div=mkbox(FRAME_W-2*WALL_VIS,WALL_VIS*0.5,FRAME_D,bm); div.position.set(0,hY,bz); tag(div,'structure'); ap(div);
 
-    var headerY = FRAME_H/2 - HEADER_H;
-    var divider = mkbox(FRAME_W-2*WALL_VIS, WALL_VIS*0.5, FRAME_D, bodyMat);
-    divider.position.set(0, headerY, bodyZCenter);
-    tag(divider,'structure'); addP(divider);
-
-    var hcy = headerY + HEADER_H/2 + WALL_VIS*0.25;
-    var ductDepth = FRAME_D*0.55;
-    [-1,1].forEach(function(side) {
-      var cx = side * FRAME_W*0.22;
-      var collar = cyl(DUCT_D/2, ductDepth, M.vent);
-      collar.rotation.x = Math.PI/2;
-      collar.position.set(cx, hcy, zSign*ductDepth/2);
-      tag(collar,'ventilation'); addP(collar);
-      var damper = new THREE.Mesh(new THREE.CircleGeometry(DUCT_D/2*0.88, 28), M.vent.clone());
-      damper.material.side = THREE.DoubleSide;
-      damper.position.set(cx, hcy, zSign*8);
-      tag(damper,'ventilation'); addP(damper);
-      dampers.push(damper);
+    var hcY=hY+HEADER_H/2+WALL_VIS*0.25, dd=FRAME_D*0.55;
+    [-1,1].forEach(function(s){
+      var cx=s*FRAME_W*0.22;
+      var col=cyl(DUCT_D/2,dd,M.vent); col.rotation.x=Math.PI/2; col.position.set(cx,hcY,zSign*dd/2); tag(col,'ventilation'); ap(col);
+      var dmp=new THREE.Mesh(new THREE.CircleGeometry(DUCT_D/2*0.88,28),M.vent.clone()); dmp.material.side=THREE.DoubleSide; dmp.position.set(cx,hcY,zSign*8); tag(dmp,'ventilation'); ap(dmp); dampers.push(dmp);
     });
+    var mnf=mkbox(FRAME_W*0.30,130,110,M.vent); mnf.position.set(0,hcY,zSign*(dd+55)); tag(mnf,'ventilation'); ap(mnf);
 
-    var manifold = mkbox(FRAME_W*0.30, 130, 110, M.vent);
-    manifold.position.set(0, hcy, zSign*(ductDepth+55));
-    tag(manifold,'ventilation'); addP(manifold);
+    var cas=mkbox(220,140,80,M.data); cas.position.set(0,hcY,zSign*40); tag(cas,'data'); ap(cas);
+    var ns=mkbox(150,95,50,M.data); ns.position.set(0,hcY,zSign*105); tag(ns,'data'); ap(ns);
+    var dlink=connectPts(cas.position,ns.position,M.data,9); tag(dlink,'data'); ap(dlink);
 
-    var fan = cyl(55, 60, M.vent, 20);
-    fan.rotation.z = Math.PI/2;
-    fan.position.set(-FRAME_W*0.1, hcy, zSign*(ductDepth+115));
-    tag(fan,'ventilation'); addP(fan);
-    tag(connectPts(manifold.position, fan.position, M.vent, 12), 'ventilation'); addP(zoneRegistry.ventilation[zoneRegistry.ventilation.length-1]);
+    var bTop=hY-WALL_VIS*0.25, bBot=-FRAME_H/2+WALL_VIS, bH=bTop-bBot, bcY=(bTop+bBot)/2;
+    var iW=FRAME_W-2*WALL_VIS, cW=(iW-PASSAGE_W)/2;
 
-    var hpac = mkbox(120, 90, 70, M.vent);
-    hpac.position.set(FRAME_W*0.1, hcy, zSign*(ductDepth+115));
-    tag(hpac,'ventilation'); addP(hpac);
+    var eCol=mkbox(cW,bH,FRAME_D*0.5,M.elec); eCol.position.set(-(PASSAGE_W/2+cW/2),bcY,bz); tag(eCol,'electrical'); ap(eCol);
+    var pCol=mkbox(cW,bH,FRAME_D*0.5,M.plumb); pCol.position.set(PASSAGE_W/2+cW/2,bcY,bz); tag(pCol,'plumbing'); ap(pCol);
 
-    var cassette = mkbox(220, 140, 80, M.data);
-    cassette.position.set(0, hcy, zSign*40);
-    tag(cassette,'data'); addP(cassette);
-    var netSwitch = mkbox(150, 95, 50, M.data);
-    netSwitch.position.set(0, hcy, zSign*105);
-    tag(netSwitch,'data'); addP(netSwitch);
-    tag(connectPts(cassette.position, netSwitch.position, M.data, 9), 'data');
-    addP(zoneRegistry.data[zoneRegistry.data.length-1]);
+    var eX=eCol.position.x;
+    var rad=mkbox(90,70,40,M.elec); rad.position.set(eX,bcY,zSign*25); tag(rad,'electrical'); ap(rad);
+    var xfm=mkbox(160,140,110,M.elec); xfm.position.set(eX,bcY,zSign*195); tag(xfm,'electrical'); ap(xfm);
+    var ats=mkbox(100,75,65,M.elec); ats.position.set(eX-cW*0.28,bcY,zSign*250); tag(ats,'electrical'); ap(ats);
+    var pnl=mkbox(130,170,40,M.elec); pnl.position.set(eX+cW*0.28,bcY,zSign*250); tag(pnl,'electrical'); ap(pnl);
+    [connectPts(rad.position,xfm.position,M.elec,10),connectPts(xfm.position,ats.position,M.elec,10),connectPts(ats.position,pnl.position,M.elec,10)].forEach(function(l){tag(l,'electrical');ap(l);});
 
-    var dishPole = cyl(6, 70, M.steel, 8);
-    dishPole.position.set(0, CONTAINER_H/2+35, bodyZCenter);
-    tag(dishPole,'data'); addP(dishPole);
-    var dish = new THREE.Mesh(new THREE.ConeGeometry(45,18,16,1,true), M.data.clone());
-    addEdges(dish);
-    dish.rotation.x = Math.PI*0.62;
-    dish.position.set(0, CONTAINER_H/2+78, bodyZCenter);
-    tag(dish,'data'); addP(dish);
+    var pX=pCol.position.x;
+    var con2=cyl(42,50,M.plumb,20); con2.rotation.x=Math.PI/2; con2.position.set(pX,bcY,zSign*25); tag(con2,'plumbing'); ap(con2);
+    var rpz=cyl(28,90,M.plumb,18); rpz.rotation.x=Math.PI/2; rpz.position.set(pX,bcY,zSign*190); tag(rpz,'plumbing'); ap(rpz);
+    tag(connectPts(con2.position,rpz.position,M.plumb,14),'plumbing'); ap(zoneRegistry.plumbing[zoneRegistry.plumbing.length-1]);
 
-    var bodyTop = headerY - WALL_VIS*0.25;
-    var bodyBot2 = -FRAME_H/2 + WALL_VIS;
-    var bodyH = bodyTop - bodyBot2;
-    var bodyCY = (bodyTop + bodyBot2)/2;
-    var floorY = -CONTAINER_H/2;
-    var interiorW = FRAME_W - 2*WALL_VIS;
-    var colW = (interiorW - PASSAGE_W)/2;
+    var dpv=new THREE.Group(); dpv.position.set(-PASSAGE_W*0.94/2,bcY,zSign*10);
+    var dpn=mkbox(PASSAGE_W*0.94,bH*0.96,FRAME_D*0.25,M.door); dpn.position.set(PASSAGE_W*0.94/2,0,0); tag(dpn,'structure'); dpv.add(dpn);
+    dpv.userData.swingSign=-zSign; doorPivots.push(dpv); ap(dpv);
 
-    var elecCol = mkbox(colW, bodyH, FRAME_D*0.5, M.elec);
-    elecCol.position.set(-(PASSAGE_W/2+colW/2), bodyCY, bodyZCenter);
-    var plumbCol = mkbox(colW, bodyH, FRAME_D*0.5, M.plumb);
-    plumbCol.position.set(PASSAGE_W/2+colW/2, bodyCY, bodyZCenter);
-    tag(elecCol,'electrical'); tag(plumbCol,'plumbing');
-    addP(elecCol); addP(plumbCol);
-
-    var elecX = elecCol.position.x;
-    var radsok = mkbox(90, 70, 40, M.elec);
-    radsok.position.set(elecX, bodyCY, zSign*25);
-    tag(radsok,'electrical'); addP(radsok);
-    var disconnect = mkbox(55, 50, 40, M.elec);
-    disconnect.position.set(elecX-colW*0.3, bodyCY, zSign*60);
-    tag(disconnect,'electrical'); addP(disconnect);
-    var transformer = mkbox(160, 140, 110, M.elec);
-    transformer.position.set(elecX, bodyCY, zSign*195);
-    tag(transformer,'electrical'); addP(transformer);
-    var ats = mkbox(100, 75, 65, M.elec);
-    ats.position.set(elecX-colW*0.28, bodyCY, zSign*250);
-    tag(ats,'electrical'); addP(ats);
-    var panel = mkbox(130, 170, 40, M.elec);
-    panel.position.set(elecX+colW*0.28, bodyCY, zSign*250);
-    tag(panel,'electrical'); addP(panel);
-    [connectPts(radsok.position, disconnect.position, M.elec, 10),
-     connectPts(disconnect.position, transformer.position, M.elec, 10),
-     connectPts(transformer.position, ats.position, M.elec, 10),
-     connectPts(ats.position, panel.position, M.elec, 10)
-    ].forEach(function(l){ tag(l,'electrical'); addP(l); });
-
-    var generator = mkbox(140, 100, 180, M.elec);
-    generator.position.set(-CONTAINER_W/2-150, floorY+50, bodyZCenter);
-    tag(generator,'electrical'); addP(generator);
-
-    var plumbX = plumbCol.position.x;
-    var connector2 = cyl(42, 50, M.plumb, 20);
-    connector2.rotation.x = Math.PI/2;
-    connector2.position.set(plumbX, bodyCY, zSign*25);
-    tag(connector2,'plumbing'); addP(connector2);
-    var branchStub = cyl(14, 70, M.plumb, 14);
-    branchStub.rotation.z = Math.PI/2;
-    branchStub.position.set(plumbX+colW*0.32, bodyCY, zSign*85);
-    tag(branchStub,'plumbing'); addP(branchStub);
-    var rpzBody = cyl(28, 90, M.plumb, 18);
-    rpzBody.rotation.x = Math.PI/2;
-    rpzBody.position.set(plumbX, bodyCY, zSign*190);
-    tag(rpzBody,'plumbing'); addP(rpzBody);
-    tag(connectPts(connector2.position, rpzBody.position, M.plumb, 14),'plumbing');
-    addP(zoneRegistry.plumbing[zoneRegistry.plumbing.length-1]);
-
-    var doorPivot = new THREE.Group();
-    doorPivot.position.set(-PASSAGE_W*0.94/2, bodyCY, zSign*10);
-    var doorPanel = mkbox(PASSAGE_W*0.94, bodyH*0.96, FRAME_D*0.25, M.door);
-    doorPanel.position.set(PASSAGE_W*0.94/2, 0, 0);
-    tag(doorPanel,'structure');
-    doorPivot.add(doorPanel);
-    doorPivot.userData.swingSign = -zSign;
-    doorPivots.push(doorPivot);
-    addP(doorPivot);
-
-    var corners = [[offX,offY],[-offX,-offY]];
-    if (kind === 'pin') {
-      corners.forEach(function(c) {
-        var pin = cyl(PIN_D/2, PIN_PROTRUSION, M.pin);
-        pin.rotation.x = Math.PI/2;
-        pin.position.set(c[0], c[1], PIN_PROTRUSION/2);
-        tag(pin,'lock'); addP(pin);
-        var tip = new THREE.Mesh(new THREE.ConeGeometry(PIN_D/2, CHAMFER_H, 24), M.pin.clone());
-        addEdges(tip);
-        tip.rotation.x = Math.PI/2;
-        tip.position.set(c[0], c[1], PIN_PROTRUSION+CHAMFER_H/2);
-        tag(tip,'lock'); addP(tip);
+    var corners=[[offX,offY],[-offX,-offY]];
+    if (kind==='pin') {
+      corners.forEach(function(c){
+        var pin=cyl(PIN_D/2,PIN_PROTRUSION,M.pin); pin.rotation.x=Math.PI/2; pin.position.set(c[0],c[1],PIN_PROTRUSION/2); tag(pin,'lock'); ap(pin);
+        var tip=new THREE.Mesh(new THREE.ConeGeometry(PIN_D/2,CHAMFER_H,24),M.pin.clone()); addEdges(tip); tip.rotation.x=Math.PI/2; tip.position.set(c[0],c[1],PIN_PROTRUSION+CHAMFER_H/2); tag(tip,'lock'); ap(tip);
       });
     } else {
-      corners.forEach(function(c) {
-        var pocket = cyl(POCKET_D/2, POCKET_DEPTH, M.pocket);
-        pocket.rotation.x = Math.PI/2;
-        pocket.position.set(c[0], c[1], zSign*POCKET_DEPTH/2);
-        tag(pocket,'lock'); addP(pocket);
+      corners.forEach(function(c){
+        var pk=cyl(POCKET_D/2,POCKET_DEPTH,M.pocket); pk.rotation.x=Math.PI/2; pk.position.set(c[0],c[1],zSign*POCKET_DEPTH/2); tag(pk,'lock'); ap(pk);
       });
     }
-
-    addContainerShell(g, zSign, M, mkbox, tag);
+    addShell(g,zSign,M,mkbox,tag);
     return g;
   }
 
-  function addContainerShell(g, zSign, M, mkbox, tag) {
-    var wallT = 20;
-    var cw2 = CONTAINER_W/2, ch2 = CONTAINER_H/2;
-    var farZ = zSign*CONTAINER_L, nearZ = zSign*6, midZ = zSign*CONTAINER_L/2;
-    var marginX = (CONTAINER_W-DOOR_OPEN_W)/2, marginY = (CONTAINER_H-DOOR_OPEN_H)/2;
-    [mkbox(CONTAINER_W,marginY,wallT,M.container),
-     mkbox(CONTAINER_W,marginY,wallT,M.container),
-     mkbox(marginX,DOOR_OPEN_H,wallT,M.container),
-     mkbox(marginX,DOOR_OPEN_H,wallT,M.container)
-    ].forEach(function(m,i) {
-      var positions = [[0,ch2-marginY/2,nearZ],[0,-ch2+marginY/2,nearZ],[-cw2+marginX/2,0,nearZ],[cw2-marginX/2,0,nearZ]];
-      m.position.set(positions[i][0],positions[i][1],positions[i][2]);
-      tag(m,'container'); g.add(m);
+  function addShell(g,zSign,M,mkbox,tag) {
+    var wT=20, cw2=CONTAINER_W/2, ch2=CONTAINER_H/2;
+    var farZ=zSign*CONTAINER_L, nearZ=zSign*6, midZ=zSign*CONTAINER_L/2;
+    var mX=(CONTAINER_W-DOOR_OPEN_W)/2, mY=(CONTAINER_H-DOOR_OPEN_H)/2;
+    [[0,ch2-mY/2,nearZ,CONTAINER_W,mY,wT],[0,-ch2+mY/2,nearZ,CONTAINER_W,mY,wT],[-cw2+mX/2,0,nearZ,mX,DOOR_OPEN_H,wT],[cw2-mX/2,0,nearZ,mX,DOOR_OPEN_H,wT]].forEach(function(p){
+      var m=mkbox(p[3],p[4],p[5],M.container); m.position.set(p[0],p[1],p[2]); tag(m,'container'); g.add(m);
     });
-    var farWall = mkbox(CONTAINER_W,CONTAINER_H,wallT,M.container);
-    farWall.position.set(0,0,farZ); tag(farWall,'container'); g.add(farWall);
-    [mkbox(CONTAINER_W,wallT,CONTAINER_L,M.container),
-     mkbox(CONTAINER_W,wallT,CONTAINER_L,M.container),
-     mkbox(wallT,CONTAINER_H,CONTAINER_L,M.container),
-     mkbox(wallT,CONTAINER_H,CONTAINER_L,M.container)
-    ].forEach(function(m,i) {
-      var pp = [[0,ch2,midZ],[0,-ch2,midZ],[-cw2,0,midZ],[cw2,0,midZ]];
-      m.position.set(pp[i][0],pp[i][1],pp[i][2]);
-      tag(m,'container'); g.add(m);
+    var fw=mkbox(CONTAINER_W,CONTAINER_H,wT,M.container); fw.position.set(0,0,farZ); tag(fw,'container'); g.add(fw);
+    [[0,ch2,midZ,CONTAINER_W,wT,CONTAINER_L],[0,-ch2,midZ,CONTAINER_W,wT,CONTAINER_L],[-cw2,0,midZ,wT,CONTAINER_H,CONTAINER_L],[cw2,0,midZ,wT,CONTAINER_H,CONTAINER_L]].forEach(function(p){
+      var m=mkbox(p[3],p[4],p[5],M.container); m.position.set(p[0],p[1],p[2]); tag(m,'container'); g.add(m);
     });
   }
 
-  threeScene = new THREE.Scene();
-  threeScene.background = new THREE.Color(0x050508);
-  threeCamera = new THREE.PerspectiveCamera(40, 1, 1, 20000);
+  threeScene = new THREE.Scene(); threeScene.background = new THREE.Color(0x050508);
+  threeCamera = new THREE.PerspectiveCamera(40,1,1,20000);
   threeRenderer = new THREE.WebGLRenderer({antialias:true});
   threeWrap.appendChild(threeRenderer.domElement);
 
-  threeScene.add(new THREE.AmbientLight(0xffffff, 0.5));
-  var key = new THREE.DirectionalLight(0xffffff, 0.9);
-  key.position.set(1500, 2000, 2500);
-  threeScene.add(key);
-  var fill = new THREE.DirectionalLight(0x4488aa, 0.3);
-  fill.position.set(-1800, -800, -1500);
-  threeScene.add(fill);
+  threeScene.add(new THREE.AmbientLight(0xffffff,0.5));
+  var key=new THREE.DirectionalLight(0xffffff,0.9); key.position.set(1500,2000,2500); threeScene.add(key);
+  var fill=new THREE.DirectionalLight(0x4488aa,0.3); fill.position.set(-1800,-800,-1500); threeScene.add(fill);
 
-  pinGroup = buildFrame('pin', -1);
-  pocketGroup = buildFrame('pocket', 1);
-  assembly = new THREE.Group();
-  assembly.add(pinGroup, pocketGroup);
-  threeScene.add(assembly);
+  pinGroup   = buildFrame('pin',   -1);
+  pocketGroup= buildFrame('pocket', 1);
+  dpsAssembly= new THREE.Group(); dpsAssembly.add(pinGroup,pocketGroup); threeScene.add(dpsAssembly);
 
-  threeTarget = new THREE.Vector3(0, 0, FRAME_D/2);
-  flyTarget = threeTarget.clone();
-  flyRadius = threeRadius;
+  threeTarget = new THREE.Vector3(0,0,FRAME_D/2);
+  flyTarget = threeTarget.clone(); flyRadius = threeRadius;
 
-  raycaster = new THREE.Raycaster();
-  mouseVec = new THREE.Vector2();
+  raycaster = new THREE.Raycaster(); mouseVec = new THREE.Vector2();
   threeWrap.addEventListener('click', onModelClick);
 
-  function resizeThree() {
-    var w = threeWrap.clientWidth, h = threeWrap.clientHeight;
-    threeRenderer.setSize(w, h);
-    threeCamera.aspect = w/h;
-    threeCamera.updateProjectionMatrix();
+  function resize() {
+    var w=threeWrap.clientWidth, h=threeWrap.clientHeight;
+    threeRenderer.setSize(w,h); threeCamera.aspect=w/h; threeCamera.updateProjectionMatrix();
   }
-  window.addEventListener('resize', resizeThree);
-  resizeThree();
+  window.addEventListener('resize',resize); resize();
 
   function updateCam() {
-    threeCamera.position.x = threeTarget.x + threeRadius*Math.sin(threePhi)*Math.sin(threeTheta);
-    threeCamera.position.y = threeTarget.y + threeRadius*Math.cos(threePhi);
-    threeCamera.position.z = threeTarget.z + threeRadius*Math.sin(threePhi)*Math.cos(threeTheta);
+    threeCamera.position.x=threeTarget.x+threeRadius*Math.sin(threePhi)*Math.sin(threeTheta);
+    threeCamera.position.y=threeTarget.y+threeRadius*Math.cos(threePhi);
+    threeCamera.position.z=threeTarget.z+threeRadius*Math.sin(threePhi)*Math.cos(threeTheta);
     threeCamera.lookAt(threeTarget);
   }
 
-  function threeLoop() {
-    requestAnimationFrame(threeLoop);
-    gapCurrent += (gapTarget - gapCurrent) * 0.06;
+  (function loop(){
+    requestAnimationFrame(loop);
+    gapCurrent += (gapTarget-gapCurrent)*0.06;
     pocketGroup.position.z = gapCurrent;
-    var dockFactor = 1 - Math.min(1, gapCurrent/SEP_GAP);
-    dampers.forEach(function(d){ d.rotation.y = dockFactor * Math.PI/2; });
-    doorPivots.forEach(function(p){ p.rotation.y = p.userData.swingSign * dockFactor * Math.PI/2 * 0.95; });
-    if (autoSpin) threeTheta += 0.003;
-    threeTarget.lerp(flyTarget, 0.06);
-    threeRadius += (flyRadius - threeRadius) * 0.06;
+    var df=1-Math.min(1,gapCurrent/SEP_GAP);
+    dampers.forEach(function(d){d.rotation.y=df*Math.PI/2;});
+    doorPivots.forEach(function(p){p.rotation.y=p.userData.swingSign*df*Math.PI/2*0.95;});
+    threeTheta += 0.003;
+    threeTarget.lerp(flyTarget,0.06); threeRadius+=(flyRadius-threeRadius)*0.06;
     updateCam();
-    threeRenderer.render(threeScene, threeCamera);
-  }
-  threeLoop();
+    threeRenderer.render(threeScene,threeCamera);
+  })();
 }
 
-// ---- CLICK-TO-DETAIL: raycast into the model, identify the zone, show its panel ----
-function onModelClick(event) {
-  if (!clickEnabled || !threeReady) return;
-  var rect = threeWrap.getBoundingClientRect();
-  mouseVec.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-  mouseVec.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-  raycaster.setFromCamera(mouseVec, threeCamera);
-  var intersects = raycaster.intersectObjects(assembly.children, true);
-  for (var i = 0; i < intersects.length; i++) {
-    var obj = intersects[i].object;
-    var zone = obj.userData.zone;
-    if (zone && zoneDetails[zone]) {
-      navTick();
-      showZoneDetail(zone);
-      applyZoneIsolation(zone);
-      clearInterval(zoneCycleTimer);
-      return;
+// ============================================================
+// CHAOS MODEL (scenes 1–2)
+// ============================================================
+function initChaos() {
+  if (chaosReady) return;
+  chaosReady = true;
+
+  chaosScene = new THREE.Scene(); chaosScene.background = new THREE.Color(0x06090f);
+  chaosCamera = new THREE.PerspectiveCamera(40,1,1,80000);
+  chaosCamera.position.set(0,1200,22000); chaosCamera.lookAt(0,0,0);
+  chaosRenderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+  threeWrap.appendChild(chaosRenderer.domElement);
+
+  chaosScene.add(new THREE.AmbientLight(0xffffff,0.4));
+  var kl=new THREE.DirectionalLight(0xffffff,0.7); kl.position.set(5000,8000,6000); chaosScene.add(kl);
+
+  var boxMat = new THREE.MeshStandardMaterial({color:0x4a5568,roughness:0.8,metalness:0.15,transparent:true,opacity:0.55});
+  var wireM  = new THREE.MeshStandardMaterial({color:0xf2a33c,roughness:0.5,metalness:0.2}); // electrical — amber
+  var pipeM  = new THREE.MeshStandardMaterial({color:0x4c7ebf,roughness:0.4,metalness:0.3}); // water — blue
+  var ductM  = new THREE.MeshStandardMaterial({color:0x7fb3d5,roughness:0.5,metalness:0.2}); // hvac — light blue
+  var dataM  = new THREE.MeshStandardMaterial({color:0x3dd6c7,roughness:0.4,metalness:0.2}); // data — cyan
+
+  chaosAssembly = new THREE.Group();
+
+  var CW=2438, CH=2896, CL=12192;
+  var gap=1800;
+
+  // Two container boxes
+  [-1,1].forEach(function(side){
+    var cg=new THREE.Group(); cg.position.x=side*(CW/2+gap/2);
+    var wT=18;
+    var cw2=CW/2,ch2=CH/2;
+    function shell(w,h,d,mat,x,y,z){ var m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.position.set(x,y,z); cg.add(m); }
+    shell(CW,wT,CL,boxMat,0,ch2,CL/2); shell(CW,wT,CL,boxMat,0,-ch2,CL/2);
+    shell(wT,CH,CL,boxMat,-cw2,0,CL/2); shell(wT,CH,CL,boxMat,cw2,0,CL/2);
+    shell(CW,CH,wT,boxMat,0,0,CL);
+    chaosAssembly.add(cg);
+  });
+
+  // Messy utility runs between the containers
+  function messyLine(mat, r, startX, startY, startZ, midX, midY, midZ, endX, endY, endZ) {
+    function seg(ax,ay,az,bx,by,bz) {
+      var p1=new THREE.Vector3(ax,ay,az), p2=new THREE.Vector3(bx,by,bz);
+      var dir=new THREE.Vector3().subVectors(p2,p1), len=dir.length();
+      var m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,len,8),mat);
+      m.position.copy(p1).add(p2).multiplyScalar(0.5);
+      m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize());
+      chaosAssembly.add(m);
     }
+    seg(startX,startY,startZ,midX,midY,midZ);
+    seg(midX,midY,midZ,endX,endY,endZ);
   }
-  closeZoneDetail();
-  applyZoneIsolation(null);
+
+  var lx = CW/2+gap/2, rx = -(CW/2+gap/2);
+  // Electrical (amber) — high, sagging
+  messyLine(wireM,   18,  lx, CH*0.35,  2000,   200, CH*0.5+300, 1000,  rx, CH*0.28,  3000);
+  messyLine(wireM,   14,  lx, CH*0.2,   4000,  -100, CH*0.15,    2500,  rx, CH*0.3,   5000);
+  messyLine(wireM,   10,  lx, CH*0.05,  6000,   350, CH*0.4,     4000,  rx, CH*0.1,   7000);
+
+  // Water (blue) — low, wandering
+  messyLine(pipeM,   30,  lx, -CH*0.2,  1500,  -400,-CH*0.05,    800,  rx, -CH*0.3,  2500);
+  messyLine(pipeM,   24,  lx, -CH*0.35, 5000,   600,-CH*0.2,    3000,  rx, -CH*0.1,  6000);
+
+  // HVAC (light blue) — large, middle height, awkward path
+  messyLine(ductM,   55,  lx,  CH*0.1,  1000,   900, CH*0.45,   2000,  rx,  CH*0.05, 4000);
+  messyLine(ductM,   48,  lx, -CH*0.05, 8000,  -200, CH*0.2,    5500,  rx, -CH*0.15, 9000);
+
+  // Data (cyan) — thin, multiple runs
+  messyLine(dataM,    8,  lx,  CH*0.4,  3000,   500, CH*0.3,    1500,  rx,  CH*0.45, 2000);
+  messyLine(dataM,    6,  lx,  CH*0.15, 7000,  -300, CH*0.05,   5000,  rx,  CH*0.2,  8000);
+  messyLine(dataM,    5,  lx, -CH*0.1,  9000,   700, CH*0.35,   6000,  rx, -CH*0.05, 10000);
+
+  // Labels (floating text via canvas sprites)
+  var labels=[
+    {text:'ELECTRICAL',color:'#f2a33c',x: 200,y: CH*0.5+480,z: 1000},
+    {text:'WATER',      color:'#4c7ebf',x:-300,y:-CH*0.05+200,z:  800},
+    {text:'HVAC',       color:'#7fb3d5',x: 900,y: CH*0.45+220,z: 2000},
+    {text:'DATA',       color:'#3dd6c7',x: 500,y: CH*0.3+160, z: 1500}
+  ];
+  labels.forEach(function(l){
+    var cv=document.createElement('canvas'); cv.width=256; cv.height=64;
+    var cx2=cv.getContext('2d');
+    cx2.clearRect(0,0,256,64);
+    cx2.font='bold 28px Helvetica Neue,Helvetica,Arial,sans-serif';
+    cx2.fillStyle=l.color;
+    cx2.textAlign='center';
+    cx2.fillText(l.text,128,40);
+    var tex=new THREE.CanvasTexture(cv);
+    var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,opacity:0.85}));
+    sp.scale.set(900,225,1);
+    sp.position.set(l.x,l.y,l.z);
+    chaosAssembly.add(sp);
+  });
+
+  chaosScene.add(chaosAssembly);
+
+  function resizeChaos(){
+    var w=threeWrap.clientWidth,h=threeWrap.clientHeight;
+    chaosRenderer.setSize(w,h); chaosCamera.aspect=w/h; chaosCamera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize',resizeChaos); resizeChaos();
+
+  (function loop(){
+    requestAnimationFrame(loop);
+    chaosTheta+=0.0008;
+    chaosAssembly.rotation.y=chaosTheta;
+    chaosRenderer.render(chaosScene,chaosCamera);
+  })();
 }
 
-function setModelMode(mode, zone, isClickable) {
-  if (!threeReady) return;
-  gapTarget = (mode === 'separated') ? SEP_GAP : 0;
-  clearInterval(zoneCycleTimer);
-  clickEnabled = !!isClickable;
-  threeWrap.classList.toggle('clickable', clickEnabled);
-  zoneHintEl.classList.toggle('show', clickEnabled);
-  closeZoneDetail();
-  applyZoneIsolation(null);
+// ============================================================
+// MODEL CLICK
+// ============================================================
+function onModelClick(e) {
+  if (!clickEnabled||!dpsReady) return;
+  var rect=threeWrap.getBoundingClientRect();
+  mouseVec.x=((e.clientX-rect.left)/rect.width)*2-1;
+  mouseVec.y=-((e.clientY-rect.top)/rect.height)*2+1;
+  raycaster.setFromCamera(mouseVec,threeCamera);
+  var hits=raycaster.intersectObjects(dpsAssembly.children,true);
+  for (var i=0;i<hits.length;i++){
+    var z=hits[i].object.userData.zone;
+    if (z&&zoneDetails[z]){ zoneClick(); showZoneDetail(z); applyZoneIsolation(z); return; }
+  }
+  closeZoneDetail(); applyZoneIsolation(null);
 }
 
-function applyZoneIsolation(zone) {
-  isolatedZone = zone;
-  Object.keys(zoneRegistry).forEach(function(zk) {
-    zoneRegistry[zk].forEach(function(mesh) {
-      var active = (zone === null) || (zk === zone);
-      mesh.material.transparent = true;
-      mesh.material.opacity = active ? (mesh.userData.baseOpacity || 1) : 0.04;
-      mesh.material.depthWrite = active;
+function setModelMode(mode,isClickable){
+  if (!dpsReady) return;
+  gapTarget = mode==='separated' ? SEP_GAP : 0;
+  clickEnabled=!!isClickable;
+  threeWrap.classList.toggle('clickable',clickEnabled);
+  zoneHintEl.classList.toggle('show',clickEnabled);
+  closeZoneDetail(); applyZoneIsolation(null);
+}
+
+function applyZoneIsolation(zone){
+  Object.keys(zoneRegistry).forEach(function(zk){
+    zoneRegistry[zk].forEach(function(m){
+      var active=(zone===null)||(zk===zone);
+      m.material.transparent=true;
+      m.material.opacity=active?(m.userData.baseOpacity||1):0.04;
+      m.material.depthWrite=active;
     });
   });
 }
 
-function showModel(show) {
-  threeWrap.style.opacity = show ? '1' : '0';
-  threeWrap.style.pointerEvents = show ? 'auto' : 'none';
+// ============================================================
+// SHOW / HIDE MODELS
+// ============================================================
+var activeModel = null;
+
+function showModel(which) {
+  // Hide both first
+  threeWrap.style.opacity='0';
+  threeWrap.innerHTML=''; // detach canvases — re-attach below
+  threeWrap.classList.remove('visible','clickable');
+
+  if (!which) { activeModel=null; return; }
+
+  if (which==='chaos') {
+    initChaos();
+    threeWrap.appendChild(chaosRenderer.domElement);
+    chaosRenderer.domElement.style.width='100%';
+    chaosRenderer.domElement.style.height='100%';
+  } else if (which==='dps') {
+    initDPS();
+    threeWrap.appendChild(threeRenderer.domElement);
+    threeRenderer.domElement.style.width='100%';
+    threeRenderer.domElement.style.height='100%';
+    // re-add click listener since we re-appended
+    threeWrap.removeEventListener('click',onModelClick);
+    threeWrap.addEventListener('click',onModelClick);
+  }
+
+  activeModel=which;
+  requestAnimationFrame(function(){ threeWrap.classList.add('visible'); });
 }
 
-// ---- RENDER SCENE ----
+// ============================================================
+// RENDER SCENE
+// ============================================================
 function renderScene(idx) {
   var s = scenes[idx];
-  stageEl.style.background = s.bg;
-  stageEl.style.transition = 'background 1.2s ease';
 
-  var h = '';
-  if (s.eyebrow) h += '<div class="eyebrow">' + s.eyebrow + '</div>';
-  if (s.accent) h += '<div class="accent-line"></div>';
-  if (s.headline) h += '<div class="headline">' + s.headline.replace(/\n/g,'<br>') + '</div>';
-  if (s.body) h += '<div class="body-text">' + s.body + '</div>';
-  if (s.zones) {
-    h += '<div class="zones-wrap">';
-    for (var i = 0; i < s.zones.length; i++) {
-      h += '<div class="dps-zone" data-zone-key="' + s.zones[i].key + '" style="transition-delay:' + (0.2 + i*0.1) + 's; cursor:pointer;" onclick="navTick(); showZoneDetail(\'' + s.zones[i].key + '\'); applyZoneIsolation(\'' + s.zones[i].key + '\');"><div><div class="dps-zone-name">' + s.zones[i].name + '</div><div class="dps-zone-text">' + s.zones[i].text + '</div></div></div>';
-    }
-    h += '</div>';
-  }
-  if (s.specs) {
-    h += '<div class="spec-grid">';
-    for (var j = 0; j < s.specs.length; j++) {
-      h += '<div class="spec-card"><div class="spec-label">' + s.specs[j].label + '</div><div class="spec-val">' + s.specs[j].val + '</div></div>';
-    }
-    h += '</div>';
-  }
-  contentEl.innerHTML = h;
-  captionEl.textContent = s.caption || '';
-  sceneNum.textContent = (idx+1) + ' / ' + scenes.length;
+  // Background
+  stageEl.style.background=s.bg;
+  stageEl.style.transition='background 1.2s ease';
 
+  // Model
   if (s.model) {
-    initThree();
-    showModel(true);
-    setModelMode(s.modelMode, s.modelZone, s.clickable);
-    modelLbl.textContent = s.modelLabel || '';
-    modelLbl.style.opacity = '1';
-    contentEl.style.position = 'fixed';
-    contentEl.style.bottom = '80px';
-    contentEl.style.top = 'auto';
-    contentEl.style.left = '50%';
-    contentEl.style.transform = 'translateX(-50%)';
-    contentEl.style.background = 'rgba(0,0,0,0.45)';
-    contentEl.style.borderRadius = '8px';
-    contentEl.style.padding = '1.2rem 1.8rem';
-    contentEl.style.maxWidth = '580px';
+    showModel(s.model);
+    if (s.model==='dps') {
+      setModelMode(s.modelMode, s.clickable);
+      modelLblEl.textContent=s.modelLabel||'';
+      modelLblEl.style.opacity='1';
+    } else {
+      modelLblEl.style.opacity='0';
+      zoneHintEl.classList.remove('show');
+    }
   } else {
-    showModel(false);
-    clearInterval(zoneCycleTimer);
-    modelLbl.style.opacity = '0';
+    showModel(null);
+    modelLblEl.style.opacity='0';
     zoneHintEl.classList.remove('show');
     closeZoneDetail();
-    contentEl.style.position = 'relative';
-    contentEl.style.bottom = '';
-    contentEl.style.top = '';
-    contentEl.style.left = '';
-    contentEl.style.transform = '';
-    contentEl.style.background = '';
-    contentEl.style.borderRadius = '';
-    contentEl.style.padding = '2rem';
-    contentEl.style.maxWidth = '660px';
   }
 
-  setTimeout(function() {
-    var els = contentEl.querySelectorAll('.eyebrow,.accent-line,.headline,.body-text,.spec-grid,.dps-zone');
-    for (var k = 0; k < els.length; k++) els[k].classList.add('show');
-  }, 40);
-}
-
-// ---- PROGRESS ----
-function startProg() {
-  clearInterval(progInterval);
-  progBar.style.width = '0%';
-}
-
-function updateProg(current, total) {
-  var pct = Math.min(100, (current / total) * 100);
-  progBar.style.width = pct + '%';
-}
-
-function goToScene(idx) {
-  if (idx >= scenes.length) { stopPlayback(); progBar.style.width='100%'; fadeOutAudio(); return; }
-  current = idx;
-  renderScene(idx);
-  if (!playing) return;
-  fadeDroneTo(scenes[idx].drone);
-  if (idx > 0) { playTone(scenes[idx].drone); navTransition(); }
-  startProg();
-  speakScene(idx, function() {
-    if (!playing) return;
-    sceneTimer = setTimeout(function() {
-      goToScene(idx + 1);
-    }, 500);
-  });
-}
-
-function togglePlay() {
-  if (playing) {
-    stopPlayback();
-    navTick();
+  // Overlay vs centered content
+  var isBg = s.model && s.modelBg;
+  var isOverlay = s.model && !s.modelBg;
+  if (isOverlay) {
+    contentEl.classList.add('overlay-mode');
   } else {
-    startPlayback();
-    navTick();
+    contentEl.classList.remove('overlay-mode');
   }
-}
-function startPlayback() {
-  initAudio();
-  if (ctx && ctx.state === 'suspended') ctx.resume();
-  masterGain.gain.cancelScheduledValues(ctx.currentTime);
-  masterGain.gain.setValueAtTime(masterVol*0.18, ctx.currentTime);
-  playing = true;
-  playBtn.textContent = 'Pause';
-  goToScene(current);
-}
-function stopPlayback() {
-  playing = false;
-  clearTimeout(sceneTimer);
-  clearInterval(progInterval);
-  clearInterval(zoneCycleTimer);
-  if (ctx) fadeOutAudio();
-  stopSpeech();
-  playBtn.textContent = 'Play';
+
+  // Build inner HTML
+  var h='';
+  if (s.eyebrow) h+='<div class="eyebrow">'+s.eyebrow+'</div>';
+  if (s.accent)  h+='<div class="accent-line"></div>';
+  if (s.headline) h+='<div class="headline">'+s.headline.replace(/\n/g,'<br>')+'</div>';
+  if (s.body)    h+='<div class="body-text">'+s.body+'</div>';
+  if (s.patentBadge) h+='<div class="patent-badge">&#9632; '+s.patentBadge+'</div>';
+
+  if (s.costRows) {
+    h+='<div class="cost-rows-wrap">';
+    s.costRows.forEach(function(r,i){
+      h+='<div class="cost-row" style="transition-delay:'+(0.2+i*0.12)+'s"><div class="cost-row-icon">'+r.icon+'</div><div><div class="cost-row-label">'+r.label+'</div><div class="cost-row-text">'+r.text+'</div></div></div>';
+    });
+    h+='</div>';
+  }
+
+  if (s.zones) {
+    h+='<div class="zones-wrap">';
+    s.zones.forEach(function(z,i){
+      h+='<div class="dps-zone" style="transition-delay:'+(0.2+i*0.1)+'s" onclick="zoneClick();showZoneDetail(\''+z.key+'\');applyZoneIsolation(\''+z.key+'\');"><div><div class="dps-zone-name">'+z.name+'</div><div class="dps-zone-text">'+z.text+'</div></div></div>';
+    });
+    h+='</div>';
+  }
+
+  if (s.specs) {
+    h+='<div class="spec-grid">';
+    s.specs.forEach(function(sp){
+      h+='<div class="spec-card"><div class="spec-label">'+sp.label+'</div><div class="spec-val">'+sp.val+'</div></div>';
+    });
+    h+='</div>';
+  }
+
+  contentEl.innerHTML=h;
+  captionEl.textContent=s.caption||'';
+  sceneNumEl.textContent=(idx+1)+' / '+scenes.length;
+
+  // Fade in elements
+  setTimeout(function(){
+    contentEl.querySelectorAll('.eyebrow,.accent-line,.headline,.body-text,.patent-badge,.cost-row,.dps-zone,.spec-grid').forEach(function(el){ el.classList.add('show'); });
+  }, 60);
+
+  // Progress bar — shows position only, no timer
+  progBar.style.width = ((idx / (scenes.length - 1)) * 100) + '%';
+
+  // Nav button visibility
+  var navPrev = document.getElementById('nav-prev');
+  var navNext = document.getElementById('nav-next');
+  if (idx === 0) { navPrev.classList.add('hidden'); } else { navPrev.classList.remove('hidden'); }
+  if (idx === scenes.length - 1) { navNext.classList.add('hidden'); } else { navNext.classList.remove('hidden'); }
 }
 
+// ============================================================
+// NAVIGATION
+// ============================================================
+function goToScene(idx) {
+  if (idx < 0 || idx >= scenes.length) return;
+  current = idx;
+  closeZoneDetail();
+  renderScene(idx);
+}
+
+function nextScene() { initAudio(); if(ctx&&ctx.state==='suspended')ctx.resume(); navTick(); goToScene(current+1); }
+function prevScene() { initAudio(); if(ctx&&ctx.state==='suspended')ctx.resume(); navTick(); goToScene(current-1); }
+
+// ============================================================
+// INIT
+// ============================================================
 renderScene(0);
 </script>
 </body>
